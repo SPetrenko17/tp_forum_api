@@ -1,0 +1,24 @@
+{
+  "name": "tp_forum_api",
+  "version": "1.0.0",
+  "description": "forum api",
+  "main": "main.js",
+  "scripts": {
+    "build": "webpack -p | node ./dist/bundle.js",
+    "start": "node ./dist/bundle.js"
+  },
+  "author": "Sergei Petrenko",
+  "license": "tp",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "express": "^4.16.3",
+    "morgan": "^1.9.0",
+    "pg": "^8.0.0",
+    "pg-promise": "^8.4.0",
+    "webpack": "^4.42.1",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "devDependencies": {
+    "webpack-cli": "^3.3.11"
+  }
+}
