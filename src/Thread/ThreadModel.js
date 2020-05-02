@@ -2,8 +2,6 @@
 
 import Database from '../database';
 import BaseModel from "../Base/BaseModel";
-// import {validateColumn} from "../utils/utils";
-
 const PQ = require('pg-promise').ParameterizedQuery;
 
 
@@ -39,7 +37,7 @@ export default new class ThreadsModel extends BaseModel {
             await this._dbContext.db.oneOrNone(`
             INSERT INTO forum_users (forum_id, user_id)
                 VALUES ($1, $2)
-                ON CONFLICT ON CONSTRAINT unique_user_in_forum DO NOTHING
+                ON CONFLICT DO NOTHING
                 RETURNING *`,
                 [forum.forum_id, user.user_id]);
 

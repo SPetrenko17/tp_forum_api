@@ -22,7 +22,6 @@ export default new class ServiceController {
     }
 
     async clearAll(req = null, reply) {
-        console.log('test service!');
         await usersModel.clearAll();
         await forumsModel.clearAll();
         await threadsModel.clearAll();

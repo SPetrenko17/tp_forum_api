@@ -17,12 +17,12 @@ export default new class VotesModel extends BaseModel{
             data: null
         };
         try {
-            const query = new PQ(`INSERT INTO votes as v 
+            const query = new PQ(`INSERT INTO votes as vote 
                 (nickname, thread, voice)
                 VALUES ($1, $2, $3) 
                 ON CONFLICT ON CONSTRAINT unique_vote DO
-                UPDATE SET voice = $3 WHERE v.voice <> $3
-                RETURNING *, (xmax::text::int > 0) as existed`,[user.nickname, thread.id, voice]);
+                UPDATE SET voice = $3 WHERE vote.voice <> $3
+                RETURNING *, (xmax::text <> '0') as existed`,[user.nickname, thread.id, voice]);
             result.data = await this._dbContext.db.oneOrNone(query);
             result.isSuccess = true;
         } catch (error) {

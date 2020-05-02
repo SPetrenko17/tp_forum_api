@@ -204,6 +204,7 @@ export default new class ThreadsController {
 
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
+
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
         let thread = await threadsModel.get(type,value);
 

@@ -41,7 +41,7 @@ export default new class PostsModel extends BaseModel{
             await this._dbContext.db.oneOrNone(`
             INSERT INTO forum_users (forum_id, user_id)
                 VALUES ($1, $2)
-                ON CONFLICT ON CONSTRAINT unique_user_in_forum DO NOTHING
+                ON CONFLICT DO NOTHING
                 RETURNING *`, [thread.forum_id, user.user_id]);
 
             result.isSuccess = true;

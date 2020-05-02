@@ -19,7 +19,8 @@ export default new class ForumsModel extends BaseModel{
         };
         try {
             const query = new PQ(`INSERT INTO forums (slug, title, owner_id, owner_nickname) 
-                VALUES ($1, $2, $3, $4) RETURNING *`, [forumData.slug, forumData.title, userData.user_id, userData.nickname]);
+                VALUES ($1, $2, $3, $4) RETURNING *`,
+                [forumData.slug, forumData.title, userData.user_id, userData.nickname]);
 
             result.data = await this._dbContext.db.one(query);
             result.isSuccess = true;
@@ -76,7 +77,7 @@ export default new class ForumsModel extends BaseModel{
         };
         try {
             const query =
-                new PQ(`UPDATE forums SET threads = threads + $1 WHERE forum_id = $2RETURNING *`,
+                new PQ(`UPDATE forums SET threads = threads + $1 WHERE forum_id = $2 RETURNING *`,
                 [threads_num, id]);
             result.data = await this._dbContext.db.one(query);
             result.isSuccess = true;

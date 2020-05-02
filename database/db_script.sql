@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     user_id     BIGSERIAL   PRIMARY KEY,
     nickname    CITEXT      UNIQUE NOT NULL,
     fullname    VARCHAR     NOT NULL ,
-    about       TEXT,
+    about       TEXT        NOT NULL ,
     email       CITEXT      UNIQUE
 );
 
@@ -64,22 +64,25 @@ CREATE TABLE IF NOT EXISTS votes (
 CREATE TABLE IF NOT EXISTS forum_users (
 	forum_id        BIGINT     NOT NULL REFERENCES forums(forum_id),
 	user_id         BIGINT     NOT NULL REFERENCES users(user_id),
-	CONSTRAINT unique_user_in_forum UNIQUE (user_id, forum_id)
+	UNIQUE (user_id, forum_id)
 );
+
 
 CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
     DECLARE
         parent_path BIGINT[];
     BEGIN
-        IF (NEW.parent IS NULL) OR (NEW.parent = 0) THEN
-            NEW.path := NEW.path || NEW.id;
+        IF (NEW.parent > 0) THEN
+        SELECT path FROM posts
+            WHERE id = NEW.parent INTO parent_path;
+        NEW.path := NEW.path || parent_path || NEW.id;
         ELSE
-            SELECT path FROM posts
-                WHERE id = NEW.parent INTO parent_path;
-            NEW.path := NEW.path || parent_path || NEW.id;
+             NEW.path := NEW.path || NEW.id;
         END IF;
+
         RETURN NEW;
     END;
+
 $path$ LANGUAGE  plpgsql;
 
 DROP TRIGGER IF EXISTS path_trigger ON posts;
