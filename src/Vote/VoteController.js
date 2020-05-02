@@ -6,12 +6,15 @@ import threadsSerializer from "../Thread/ThreadSerializer";
 
 export default new class VoteController {
 
-    async createVoteForThread(req, res) {
+    async createVoteForThread(req, reply) {
         let voteData = req.body;
 
         let user = await usersModel.getByNickname(voteData.nickname);
         if (!user) {
-            return res.status(404).json({message: "Can't find user with nickname " + voteData.nickname});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find user with nickname " + voteData.nickname})
         }
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
@@ -19,16 +22,24 @@ export default new class VoteController {
         let thread = await threadsModel.get(type,value);
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']})
         }
         thread.id = Number(thread.id);
 
         let voteResult = await votesModel.create(voteData.voice, user, thread);
         if (!voteResult.isSuccess) {
-            return res.status(400).json({message: voteResult.message});
+            return reply
+                .code(400)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: voteResult.message});
         } else if (!voteResult.data) {
-
-            return res.status(200).json(threadsSerializer.serialize_one(thread));
+            return reply
+                .code(200)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(thread));
         }
 
         let voiceValue = voteResult.data.voice;
@@ -38,10 +49,15 @@ export default new class VoteController {
 
         let updateThreadResult = await threadsModel.updateThreadVotes(thread, voiceValue);
         if (voteResult.isSuccess) {
-            return res.status(200).json(threadsSerializer.serialize_one(updateThreadResult.data));
+            return reply
+                .code(200)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(updateThreadResult.data));
         }
-
-        res.status(500).end();
+        return reply
+            .code(500)
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send();
     }
 
 }

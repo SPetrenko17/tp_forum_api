@@ -26,7 +26,7 @@ export default class BaseModel {
             console.log('ERROR: ', error.message);
         }
     }
-    validateColumn(column) {
+     validateColumn(column) {
         return {
             name: column,
             skip: function(){ return this[column] === null || this[column] === undefined;}

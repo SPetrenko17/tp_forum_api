@@ -10,24 +10,35 @@ import {isValidId} from "../utils/utils";
 
 export default new class ThreadsController {
 
-    async createPostsForThread(req, res) {
+    async createPostsForThread(req, reply) {
         let postsData = req.body;
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
-        let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
+
+        let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id'];
 
         let thread = await threadsModel.get(type,value);
 
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
         }
 
         thread.id = Number(thread.id);
         if (Array.isArray(postsData) && !postsData.length) {
-            return res.status(201).json(postsData);
+            return reply
+                .code(201)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(postsData);
+
         } else if (!Array.isArray(postsData)) {
-            return res.status(400).json({message: "Request data must be an array."});
+            return reply
+                .code(400)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Request data must be an array."});
         }
 
         let postsResult = [];
@@ -36,7 +47,10 @@ export default new class ThreadsController {
 
             let user = await usersModel.getByNickname(postData.author);
             if (!user) {
-                return res.status(404).json({message: "Can't find user with nickname " + postData.author});
+                return reply
+                    .code(404)
+                    .header('Content-Type', 'application/json; charset=utf-8')
+                    .send({message: "Can't find user with nickname " + postData.author});
             }
 
             postData['created'] = createdDatetime;
@@ -45,28 +59,43 @@ export default new class ThreadsController {
             if (createPostResult.isSuccess) {
                 postsResult.push(createPostResult.data);
             } else if (createPostResult.message === '409') {
-                return res.status(409).json({message: "Can't create post this parent in a different thread."});
+                return reply
+                    .code(409)
+                    .header('Content-Type', 'application/json; charset=utf-8')
+                    .send({message: "Can't create post this parent in a different thread."});
             } else {
-                return res.status(400).end();
+                return reply
+                    .code(400)
+                    .header('Content-Type', 'application/json; charset=utf-8')
+                    .send();
             }
         }
 
         if (postsData.length > 0) {
             let addPostsResult = await forumsModel.addPostsToForum(thread.forum_id, postsData.length);
             if (!addPostsResult.isSuccess) {
-                return res.status(500).end();
+                return reply
+                    .code(500)
+                    .header('Content-Type', 'application/json; charset=utf-8')
+                    .send();
             }
         }
 
-        res.status(201).json(postsSerializer.serialize_many(postsResult));
+        reply
+            .code(201)
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(postsSerializer.serialize_many(postsResult));
     }
 
-    async createOrUpdateVoteForThread(req, res) {
+    async createOrUpdateVoteForThread(req, reply) {
         let voteData = req.body;
 
         let user = await usersModel.getByNickname(voteData.nickname);
         if (!user) {
-            return res.status(404).json({message: "Can't find user with nickname " + voteData.nickname});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find user with nickname " + voteData.nickname});
         }
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
@@ -74,16 +103,25 @@ export default new class ThreadsController {
         let thread = await threadsModel.get(type,value);
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
         }
         thread.id = Number(thread.id);
 
         let voteResult = await votesModel.create(voteData.voice, user, thread);
         if (!voteResult.isSuccess) {
-            return res.status(400).json({message: voteResult.message});
+            return reply
+                .code(400)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: voteResult.message});
         } else if (!voteResult.data) {
 
-            return res.status(200).json(threadsSerializer.serialize_one(thread));
+            return reply
+                .code(200)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(thread));
         }
 
         let voiceValue = voteResult.data.voice;
@@ -93,13 +131,19 @@ export default new class ThreadsController {
 
         let updateThreadResult = await threadsModel.updateThreadVotes(thread, voiceValue);
         if (voteResult.isSuccess) {
-            return res.status(200).json(threadsSerializer.serialize_one(updateThreadResult.data));
+            return reply
+                .code(200)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(updateThreadResult.data));
         }
 
-        res.status(500).end();
+        reply
+            .code(500)
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send();
     }
 
-    async getThreadDetails(req, res) {
+    async getThreadDetails(req, reply) {
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id'];
@@ -107,35 +151,50 @@ export default new class ThreadsController {
         let thread = await threadsModel.get(type,value);
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
         }
-        res.json(threadsSerializer.serialize_one(thread));
+        reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(threadsSerializer.serialize_one(thread));
     }
 
-    async updateThreadDetails(req, res) {
+    async updateThreadDetails(req, reply) {
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
         let thread = await threadsModel.get(type,value);
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
         }
 
         let updatedThread = await threadsModel.updateThread(thread.id, req.body);
         if (!updatedThread) {
-            return res.status(409).json({ message: "Can't change thread with id " + thread_id });
+            return reply
+                .code(409)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({ message: "Can't change thread with id " + thread_id });
         }
 
         if (updatedThread === true) {
-            res.json(threadsSerializer.serialize_one(thread));
+            reply
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(thread));
         } else {
-            res.json(threadsSerializer.serialize_one(updatedThread));
+            reply
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(updatedThread));
         }
 
     }
 
-    async getThreadPosts(req, res) {
+    async getThreadPosts(req, reply) {
 
         const getParams = {
             desc : req.query.desc === 'true',
@@ -149,7 +208,10 @@ export default new class ThreadsController {
         let thread = await threadsModel.get(type,value);
 
         if (!thread) {
-            return res.status(404).json({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug or id " + req.params['slug_or_id']});
         }
 
         let postsResult;
@@ -163,7 +225,9 @@ export default new class ThreadsController {
             default:
                 postsResult = await postsModel.getPostsByThreadIdFlatSort(thread.id, getParams);
         }
-        res.json(postsSerializer.serialize_many(postsResult));
+        reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(postsSerializer.serialize_many(postsResult));
     }
 
 }

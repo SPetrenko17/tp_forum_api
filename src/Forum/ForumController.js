@@ -7,63 +7,92 @@ import {isValidId} from "../utils/utils";
 
 export default new class ForumsController {
 
-    async createForum(req, res) {
+    async createForum(req, reply) {
         let forumData = req.body;
         let ownerNickname = forumData.user;
 
         let user = await usersModel.getByNickname(ownerNickname);
         if (!user) {
             //В доке был поиск по айдишнку, но в запросе был никнейм. Оставил никнейм
-            return res.status(404).json({message: "Can't find user with nickname " + ownerNickname});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find user with nickname " + ownerNickname});
         }
 
         let existingForum = await forumsModel.getForumBySlug(forumData.slug);
         if (existingForum) {
-            return res.status(409).json(forumSerializer.serialize_one(existingForum, '409'));
+            return reply
+                .code(409)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(forumSerializer.serialize_one(existingForum, '409'));
         }
 
         let createForumResult = await forumsModel.createForum(forumData, user);
         if (createForumResult.isSuccess) {
-            res.status(201).json(forumSerializer.serialize_one(createForumResult, '201'));
+             reply
+                .code(201)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(forumSerializer.serialize_one(createForumResult, '201'));
 
         } else {
-            res.status(500).end();
+            reply
+                .code(500)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send();
         }
     }
 
-    async getForumDetails(req, res) {
+    async getForumDetails(req, reply) {
         let slug = req.params['slug'];
 
         let existingForum = await forumsModel.getForumBySlug(slug);
         if (!existingForum) {
-            return res.status(404).json({message: "Can't find forum with slug " + slug});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug " + slug});
         }
 
-        res.json(forumSerializer.serialize_one(existingForum, '404'));
+        reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(forumSerializer.serialize_one(existingForum, '404'));
     }
 
-    async createThreadForForum(req, res) {
+    async createThreadForForum(req, reply) {
         let threadData = req.body;
         let authorNickname = threadData.author;
         let forumSlug = req.params['slug'];
         if (isValidId(forumSlug)) {
             console.log('formSlug', forumSlug);
-            return res.status(400).json({message: "Slug can not contain only digits "});
+            return reply
+                .code(400)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Slug can not contain only digits "});
         }
 
         let user = await usersModel.getByNickname(authorNickname);
         if (!user) {
-            return res.status(404).json({message: "Can't find user with nickname " + authorNickname});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find user with nickname " + authorNickname});
         }
 
         let existingThread = await threadsModel.get('slug', threadData.slug);
         if (existingThread) {
-            return res.status(409).json(threadsSerializer.serialize_one(existingThread));
+            return reply
+                .code(409)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(existingThread));
         }
 
         let forum = await forumsModel.getForumBySlug(forumSlug);
         if (!forum) {
-            return res.status(404).json({message: "Can't find forum with slug " + forumSlug});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug " + forumSlug});
         }
 
         let createThreadResult = await threadsModel.createThread(threadData, user, forum);
@@ -71,15 +100,24 @@ export default new class ForumsController {
         if (createThreadResult.isSuccess) {
             let addThreadResult = await forumsModel.addThreadsToForum(createThreadResult.data.forum_id);
             if (!addThreadResult.isSuccess) {
-                return res.status(500).end();
+                return reply
+                    .code(500)
+                    .header('Content-Type', 'application/json; charset=utf-8')
+                    .send();
             }
-            return res.status(201).json(threadsSerializer.serialize_one(createThreadResult.data));
+            return reply
+                .code(201)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(threadsSerializer.serialize_one(createThreadResult.data));
         } else {
-            return res.status(500).end();
+            return reply
+                .code(500)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send();
         }
     }
 
-    async getForumThreads(req, res) {
+    async getForumThreads(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
             limit : req.query.limit ? parseInt(req.query.limit) : 100,
@@ -89,14 +127,19 @@ export default new class ForumsController {
 
         let existingForum = await forumsModel.getForumBySlug(getParams.slug);
         if (!existingForum) {
-            return res.status(404).json({message: "Can't find forum with slug " + getParams.slug});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug " + getParams.slug});
         }
 
         let threads = await threadsModel.getThreadsByForumSlug(getParams);
-        res.json(threadsSerializer.serialize_many(threads));
+        reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(threadsSerializer.serialize_many(threads));
     }
 
-    async getForumUsers(req, res) {
+    async getForumUsers(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
             limit : req.query.limit ? parseInt(req.query.limit) : 100,
@@ -105,10 +148,15 @@ export default new class ForumsController {
         };
         const existingForum = await forumsModel.getForumBySlug(getParams.slug);
         if (!existingForum) {
-            return res.status(404).json({message: "Can't find forum with slug " + getParams.slug});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find forum with slug " + getParams.slug});
         }
         const users = await usersModel.getUsersFromForum(existingForum.forum_id, getParams);// здесь
-        res.json(users);
+        reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(users);
     }
 
 }

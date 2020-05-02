@@ -9,12 +9,15 @@ import threadsSerializer from '../Thread/ThreadSerializer';
 
 export default new class PostsController {
 
-    async getPostDetails(req, res) {
+    async getPostDetails(req, reply) {
         const postId = req.params['id'];
         const existingPost = await postsModel.getPostById(postId);
 
         if (!existingPost) {
-            return res.status(404).json({message: `Can't find post with id #${postId}\n`});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: `Can't find post with id #${postId}\n`})
         }
         let result = {};
         result.post = postsSerializer.serialize_one(existingPost);
@@ -32,26 +35,38 @@ export default new class PostsController {
                 result.forum.user = result.forum.owner_nickname;
             }
         }
-        res.json(result);
+       reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(result)
     }
 
-    async updatePostDetails(req, res) {
+    async updatePostDetails(req, reply) {
         const postId = req.params['id'];
         const existingPost = await postsModel.getPostById(postId);
         if (!existingPost) {
-            return res.status(404).json({message: "Can't find post with id " + postId});
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find post with id " + postId})
         }
 
         if (!req.body.message || req.body.message === existingPost.message) {
-            return res.json(postsSerializer.serialize_one(existingPost));
+            return reply
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(postsSerializer.serialize_one(existingPost))
         }
 
         let updatedPost = await postsModel.updatePost(postId, req.body);
         if (!updatedPost.isSuccess) {
-            return res.status(500).json({ message: "Can't change post with id " + postId });
+            return reply
+                .code(500)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({ message: "Can't change post with id " + postId })
         }
 
-        res.json(postsSerializer.serialize_one(updatedPost.data));
+        return reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .send(postsSerializer.serialize_one(updatedPost.data));
     }
 
 }

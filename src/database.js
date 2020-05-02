@@ -10,6 +10,20 @@ const connect = {
         database: 'postgres',
         user: 'postgres',
         password: ''
+    },
+    docker: {
+        host: 'localhost',
+        port: 5432,
+        database: 'docker',
+        user: 'docker',
+        password: 'docker'
+    },
+    testServer:{
+        host: '',
+        port: 5432,
+        database: '',
+        user: '',
+        password: ''
     }
 };
 
