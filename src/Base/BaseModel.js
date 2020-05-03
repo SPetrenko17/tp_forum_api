@@ -1,8 +1,6 @@
 'use strict';
 
 import Database from '../database';
-const PQ = require('pg-promise').ParameterizedQuery;
-
 export default class BaseModel {
 
     constructor(modelName) {
@@ -29,7 +27,7 @@ export default class BaseModel {
      validateColumn(column) {
         return {
             name: column,
-            skip: function(){ return this[column] === null || this[column] === undefined;}
+            skip: function() { return !this[column]}
         };
     }
 

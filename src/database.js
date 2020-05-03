@@ -17,13 +17,6 @@ const connect = {
         database: 'docker',
         user: 'docker',
         password: 'docker'
-    },
-    testServer:{
-        host: '',
-        port: 5432,
-        database: '',
-        user: '',
-        password: ''
     }
 };
 

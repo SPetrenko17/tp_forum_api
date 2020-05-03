@@ -8,7 +8,7 @@ export default new class UsersController {
         let userData = req.body;
 
         let existingUser = await usersModel.getUsersByNicknameOrEmail(nickname, userData.email);
-        if (existingUser.length > 0) {
+        if (existingUser.length) {
             return reply
                 .code(409)
                 .header('Content-Type', 'application/json; charset=utf-8')
@@ -30,7 +30,7 @@ export default new class UsersController {
     }
 
     async get(req, reply) {
-        let nickname = req.params['nickname'];
+        const nickname = req.params['nickname'];
         let existingUser = await usersModel.getByNickname(nickname);
         if (!existingUser) {
             return reply
@@ -44,11 +44,8 @@ export default new class UsersController {
     }
 
     async updateUser(req, reply) {
-        let nickname = req.params['nickname'];
-        let userData = req.body;
-
+        const nickname = req.params['nickname'];
         let existingUser = await usersModel.getByNickname(nickname);
-
         if (!existingUser) {
             return reply
                 .code(404)
@@ -56,7 +53,7 @@ export default new class UsersController {
                 .send({ message: `Can't find user with nickname ${nickname}`});
         }
 
-        let updatedUser = await usersModel.updateUser(nickname, userData);
+        let updatedUser = await usersModel.updateUser(nickname, req.body);
         if (!updatedUser) {
             return reply
                 .code(409)

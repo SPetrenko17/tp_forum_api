@@ -11,13 +11,11 @@ export default new class ForumSerializer extends BaseSerializer{
                     user: forum.owner_nickname,
                     posts: forum.posts,
                     threads: forum.threads }
-                break;
             case '409':
                 return  {
                     slug: forum.slug,
                     title: forum.title,
                     user: forum.owner_nickname};
-                break;
 
             case '201':{
                 return {

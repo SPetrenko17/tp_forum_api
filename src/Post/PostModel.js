@@ -63,6 +63,17 @@ export default new class PostsModel extends BaseModel{
         }
     }
 
+    async getPostByThreadId(sort, threadId, getParams){
+        switch (sort) {
+            case 'tree':
+                return await this.getPostsByThreadIdTreeSort(threadId, getParams);
+            case 'parent_tree':
+                return await this.getPostsByThreadIdParentTreeSort(threadId, getParams);
+            default:
+                return await this.getPostsByThreadIdFlatSort(threadId, getParams);
+        }
+    }
+
     async getPostsByThreadIdFlatSort(threadId, getParams) {
         try {
             let cond = '';
@@ -141,15 +152,16 @@ export default new class PostsModel extends BaseModel{
                 AND thread_id = $1  `, [threadId]);
             }
             return await this._dbContext.db.manyOrNone(`
-                SELECT * FROM posts JOIN
-                (SELECT id AS sub_parent_id FROM posts $1:raw ORDER BY $5:raw LIMIT $4 ) AS sub 
-                ON (thread_id = $2 AND sub.sub_parent_id = path[1]) 
-                ORDER BY $3:raw`, [
+                SELECT * FROM posts INNER JOIN
+                (SELECT id AS sub_parent_id FROM posts $1:raw ORDER BY $2:raw LIMIT $3 ) AS sub 
+                ON (thread_id = $4 AND sub.sub_parent_id = path[1]) 
+                ORDER BY $5:raw`, [
                 subWhereCondition.toString(),
+                (getParams.desc ? 'id DESC ' : 'id ASC'),
+                getParams.limit,
                 threadId,
                 (getParams.desc ? 'sub.sub_parent_id DESC, path ASC' : 'path ASC'),
-                getParams.limit,
-                (getParams.desc ? 'id DESC ' : 'id ASC'),]);
+            ]);
         } catch (error) {
             console.log('ERROR: ', error.message);
         }

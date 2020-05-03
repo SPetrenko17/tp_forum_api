@@ -1,5 +1,6 @@
 import BaseSerializer from "../Base/BaseSerializer";
 
+
 export default new class ThreadsSerializer extends BaseSerializer{
     serialize_one(thread) {
         return {

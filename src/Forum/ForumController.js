@@ -120,7 +120,7 @@ export default new class ForumsController {
     async getForumThreads(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
-            limit : req.query.limit ? parseInt(req.query.limit) : 100,
+            limit : req.query.limit ? Number(req.query.limit) : 100,
             since : req.query.since,
             slug  : req.params['slug']
         };
@@ -142,7 +142,7 @@ export default new class ForumsController {
     async getForumUsers(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
-            limit : req.query.limit ? parseInt(req.query.limit) : 100,
+            limit : req.query.limit ? Number(req.query.limit) : 100,
             since : req.query.since,
             slug  : req.params['slug']
         };
@@ -153,7 +153,7 @@ export default new class ForumsController {
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send({message: "Can't find forum with slug " + getParams.slug});
         }
-        const users = await usersModel.getUsersFromForum(existingForum.forum_id, getParams);// здесь
+        const users = await usersModel.getUsersFromForum(existingForum.forum_id, getParams);
         reply
             .header('Content-Type', 'application/json; charset=utf-8')
             .send(users);

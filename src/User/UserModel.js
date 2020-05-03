@@ -2,10 +2,6 @@ import BaseModel from "../Base/BaseModel";
 import Database from '../database';
 
 const PQ = require('pg-promise').ParameterizedQuery;
-
-
-
-
 export default new class UsersModel extends BaseModel{
 
 
@@ -45,15 +41,6 @@ export default new class UsersModel extends BaseModel{
     async getByNickname(nickname) {
         try {
             const query = new PQ(`SELECT * FROM users WHERE nickname = $1`, [nickname]);
-            return await this._dbContext.db.oneOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
-    }
-
-    async getByEmail(email) {
-        try {
-            const query = new PQ(`SELECT * FROM users WHERE email = $1`, [email]);
             return await this._dbContext.db.oneOrNone(query);
         } catch (error) {
             console.log('ERROR: ', error.message);
@@ -116,7 +103,7 @@ export default new class UsersModel extends BaseModel{
                 cond += ` LIMIT ` + getParams.limit.toString();
             }
             return await this._dbContext.db.manyOrNone(`SELECT forum_id, about, email, fullname, nickname FROM users
-            JOIN forum_users USING(user_id) WHERE forum_id = ${forum_id} ${cond}`,[])
+            INNER JOIN forum_users USING(user_id) WHERE forum_id = ${forum_id} ${cond}`,[])
 
         } catch (error) {
             console.log('ERROR: ', error.message);

@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS forums (
     owner_id        BIGINT      NOT NULL REFERENCES users(user_id),
     owner_nickname  CITEXT      NOT NULL REFERENCES users(nickname),
     posts           INTEGER     DEFAULT 0,
-    threads         INTEGER     DEFAULT 0
+    threads         INTEGER     DEFAULT 0,
+    FOREIGN KEY ( owner_id ) REFERENCES users(user_id),
+    FOREIGN KEY ( owner_nickname ) REFERENCES users(nickname)
 );
 
 CREATE TABLE IF NOT EXISTS threads (
@@ -35,7 +37,12 @@ CREATE TABLE IF NOT EXISTS threads (
     created         TIMESTAMP WITH TIME ZONE    DEFAULT NOW(),
     title           VARCHAR                     NOT NULL,
     message         VARCHAR                     NOT NULL,
-    votes           INTEGER                     DEFAULT 0
+    votes           INTEGER                     DEFAULT 0,
+    FOREIGN KEY ( author_id ) REFERENCES users(user_id),
+    FOREIGN KEY ( author_nickname ) REFERENCES users(nickname),
+    FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
+    FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
+
 );
 
 CREATE TABLE IF NOT EXISTS posts (
@@ -50,7 +57,11 @@ CREATE TABLE IF NOT EXISTS posts (
     isEdited            BOOLEAN                     DEFAULT FALSE,
     message             VARCHAR                     NOT NULL,
     parent              BIGINT                      NULL REFERENCES posts(id),
-    path                BIGINT                      ARRAY
+    path                BIGINT                      ARRAY,
+    FOREIGN KEY ( author_id ) REFERENCES users(user_id),
+    FOREIGN KEY ( author_nickname ) REFERENCES users(nickname),
+    FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
+    FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
 );
 
 CREATE TABLE IF NOT EXISTS votes (

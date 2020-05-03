@@ -8,7 +8,7 @@ const PQ = require('pg-promise').ParameterizedQuery;
 export default new class ThreadsModel extends BaseModel {
 
     constructor() {
-        super('threads')
+        super('threads');
         this._dbContext = Database
     }
 

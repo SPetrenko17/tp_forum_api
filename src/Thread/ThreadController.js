@@ -14,7 +14,6 @@ export default new class ThreadsController {
         let postsData = req.body;
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
-
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id'];
 
         let thread = await threadsModel.get(type,value);
@@ -216,16 +215,8 @@ export default new class ThreadsController {
         }
 
         let postsResult;
-        switch (req.query.sort) {
-            case 'tree':
-                postsResult = await postsModel.getPostsByThreadIdTreeSort(thread.id, getParams);
-                break;
-            case 'parent_tree':
-                postsResult = await postsModel.getPostsByThreadIdParentTreeSort(thread.id, getParams);
-                break;
-            default:
-                postsResult = await postsModel.getPostsByThreadIdFlatSort(thread.id, getParams);
-        }
+        postsResult = await postsModel.getPostByThreadId(req.query.sort, thread.id, getParams);
+
         reply
             .header('Content-Type', 'application/json; charset=utf-8')
             .send(postsSerializer.serialize_many(postsResult));
