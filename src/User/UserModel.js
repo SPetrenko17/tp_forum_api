@@ -25,7 +25,7 @@ export default new class UsersModel extends BaseModel{
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;
-            console.log('ERROR: ', error.message);
+
         }
         return result;
     }
@@ -34,17 +34,13 @@ export default new class UsersModel extends BaseModel{
         try {
             const query = new PQ(`SELECT * FROM users WHERE user_id = $1`, [id]);
             return await this._dbContext.db.oneOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
     async getByNickname(nickname) {
         try {
             const query = new PQ(`SELECT * FROM users WHERE nickname = $1`, [nickname]);
             return await this._dbContext.db.oneOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
     async updateUser(nickname, userData) {
@@ -64,9 +60,7 @@ export default new class UsersModel extends BaseModel{
             }
             return await this._dbContext.db.oneOrNone(query);
         }
-        catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        catch (error) {}
     }
 
 
@@ -78,9 +72,7 @@ export default new class UsersModel extends BaseModel{
         try {
             const query = new PQ(`SELECT * FROM users WHERE nickname = $1 OR email = $2`,[nickname, email]);
             return await this._dbContext.db.manyOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
     async getUsersFromForum(forum_id, getParams) {
@@ -105,9 +97,7 @@ export default new class UsersModel extends BaseModel{
             return await this._dbContext.db.manyOrNone(`SELECT forum_id, about, email, fullname, nickname FROM users
             INNER JOIN forum_users USING(user_id) WHERE forum_id = ${forum_id} ${cond}`,[])
 
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
 

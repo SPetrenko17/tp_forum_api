@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 
 MAINTAINER Sergei Petrenko
 
-# Обвновление списка пакетов
+# Update packages
 RUN apt-get -y update
 
 # Install PSQL

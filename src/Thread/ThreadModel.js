@@ -25,12 +25,17 @@ export default new class ThreadsModel extends BaseModel {
                 author_id, author_nickname,
                 forum_id, forum_slug, 
                 created, title, message) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`);
-            query.values = [
-                threadData.slug,
-                user.user_id, user.nickname,
-                forum.forum_id, forum.slug,
-                threadData.created, threadData.title, threadData.message];
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                [
+                    threadData.slug,
+                    user.user_id,
+                    user.nickname,
+                    forum.forum_id,
+                    forum.slug,
+                    threadData.created,
+                    threadData.title,
+                    threadData.message]);
+
 
             result.data = await this._dbContext.db.one(query);
 
@@ -44,8 +49,6 @@ export default new class ThreadsModel extends BaseModel {
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;
-            console.log('ERROR: ', error.message);
-
         }
         return result;
     }
@@ -54,10 +57,7 @@ export default new class ThreadsModel extends BaseModel {
         try {
             const query = new PQ(`SELECT * FROM threads WHERE ${type} = $1`, [value]);
             return await this._dbContext.db.oneOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-
-        }
+        } catch (error) {}
     }
 
     async updateThread(id, threadData) {
@@ -75,10 +75,7 @@ export default new class ThreadsModel extends BaseModel {
             }
             return await this._dbContext.db.oneOrNone(query);
         }
-        catch (error) {
-            console.log('ERROR: ', error.message);
-
-        }
+        catch (error) {}
     }
 
 
@@ -100,9 +97,7 @@ export default new class ThreadsModel extends BaseModel {
             }
             cond += ` LIMIT ${getParams.limit} `;
             return await this._dbContext.db.manyOrNone(`SELECT * FROM threads `+ cond.toString());
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
     async updateThreadVotes(thread, voiceValue) {

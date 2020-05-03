@@ -27,7 +27,6 @@ export default new class VotesModel extends BaseModel{
             result.isSuccess = true;
         } catch (error) {
             result.errorCode = error.message;
-            console.log('ERROR: ', error.message);
         }
         return result;
     }

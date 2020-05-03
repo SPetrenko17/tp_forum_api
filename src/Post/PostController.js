@@ -9,7 +9,7 @@ import threadsSerializer from '../Thread/ThreadSerializer';
 
 export default new class PostsController {
 
-    async getPostDetails(req, reply) {
+    async GetRequestPostDetails(req, reply) {
         const postId = req.params['id'];
         const existingPost = await postsModel.getPostById(postId);
 
@@ -40,7 +40,7 @@ export default new class PostsController {
             .send(result)
     }
 
-    async updatePostDetails(req, reply) {
+    async PostRequestPostDetails(req, reply) {
         const postId = req.params['id'];
         const existingPost = await postsModel.getPostById(postId);
         if (!existingPost) {
@@ -50,7 +50,11 @@ export default new class PostsController {
                 .send({message: "Can't find post with id " + postId})
         }
 
-        if (!req.body.message || req.body.message === existingPost.message) {
+        if (!req.body.message ) {
+            return reply
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send(postsSerializer.serialize_one(existingPost))
+        } else if (req.body.message === existingPost.message){
             return reply
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send(postsSerializer.serialize_one(existingPost))

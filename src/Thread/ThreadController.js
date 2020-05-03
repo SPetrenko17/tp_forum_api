@@ -10,7 +10,7 @@ import {isValidId} from "../utils/utils";
 
 export default new class ThreadsController {
 
-    async createPostsForThread(req, reply) {
+    async PostRequestPostForThread(req, reply) {
         let postsData = req.body;
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
@@ -86,7 +86,7 @@ export default new class ThreadsController {
             .send(postsSerializer.serialize_many(postsResult));
     }
 
-    async createOrUpdateVoteForThread(req, reply) {
+    async PostRequestVoteForThread(req, reply) {
         let voteData = req.body;
 
         let user = await usersModel.getByNickname(voteData.nickname);
@@ -142,7 +142,7 @@ export default new class ThreadsController {
             .send();
     }
 
-    async getThreadDetails(req, reply) {
+    async GetRequestThreadDetails(req, reply) {
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id'];
@@ -160,7 +160,7 @@ export default new class ThreadsController {
             .send(threadsSerializer.serialize_one(thread));
     }
 
-    async updateThreadDetails(req, reply) {
+    async PostRequestThreadDetails(req, reply) {
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
@@ -193,17 +193,9 @@ export default new class ThreadsController {
 
     }
 
-    async getThreadPosts(req, reply) {
-
-        const getParams = {
-            desc : req.query.desc === 'true',
-            limit : req.query.limit ? parseInt(req.query.limit) : 100,
-            since : req.query.since,
-        };
-
+    async GetRequestThreadsPost(req, reply) {
 
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
-
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
         let thread = await threadsModel.get(type,value);
 
@@ -215,7 +207,11 @@ export default new class ThreadsController {
         }
 
         let postsResult;
-        postsResult = await postsModel.getPostByThreadId(req.query.sort, thread.id, getParams);
+        postsResult = await postsModel.getPostByThreadId(req.query.sort, thread.id, {
+            desc : req.query.desc === 'true',
+            limit : req.query.limit ? parseInt(req.query.limit) : 100,
+            since : req.query.since,
+        });
 
         reply
             .header('Content-Type', 'application/json; charset=utf-8')

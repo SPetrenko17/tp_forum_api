@@ -47,7 +47,6 @@ export default new class PostsModel extends BaseModel{
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;
-            console.log('ERROR: ', error.message);
         }
         return result;
     }
@@ -58,9 +57,7 @@ export default new class PostsModel extends BaseModel{
         try {
             const query = new PQ(`SELECT * FROM posts WHERE id = $1`, [id]);
             return await this._dbContext.db.oneOrNone(query);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
     async getPostByThreadId(sort, threadId, getParams){
@@ -95,9 +92,7 @@ export default new class PostsModel extends BaseModel{
             }
             return await this._dbContext.db.manyOrNone(`SELECT * FROM posts WHERE thread_id = ${threadId} ${cond}`, []);
 
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
     async getPostsByThreadIdTreeSort(threadId, getParams) {
@@ -128,43 +123,30 @@ export default new class PostsModel extends BaseModel{
 
             return await this._dbContext.db.manyOrNone(`SELECT * FROM posts ${cond}`);
 
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
+
     }
 
 
     async getPostsByThreadIdParentTreeSort(threadId, getParams) {
         try {
-            let subWhereCondition;
+            let subWhereCondition = `WHERE parent IS NULL AND thread_id = ${threadId}`;
             if (getParams.since && getParams.desc) {
-                subWhereCondition = this._dbContext.pgp.as.format(` WHERE parent IS NULL 
-                AND thread_id = $1  
-                AND path[1] < (SELECT path[1] FROM posts WHERE id =  $2) `,
-                    [threadId, getParams.since]);
+                subWhereCondition +=`AND path[1] < (SELECT path[1] FROM posts WHERE id =  ${getParams.since})`;
             } else if (getParams.since && !getParams.desc) {
-                subWhereCondition = this._dbContext.pgp.as.format(` WHERE parent IS NULL 
-                AND thread_id = $1  
-                AND path[1] > (SELECT path[1] FROM posts WHERE id =  $2) `,
-                    [threadId, getParams.since]);
-            } else {
-                subWhereCondition = this._dbContext.pgp.as.format(` WHERE parent IS NULL 
-                AND thread_id = $1  `, [threadId]);
+                subWhereCondition += `AND path[1] > (SELECT path[1] FROM posts WHERE id =  ${getParams.since})`;
             }
             return await this._dbContext.db.manyOrNone(`
                 SELECT * FROM posts INNER JOIN
-                (SELECT id AS sub_parent_id FROM posts $1:raw ORDER BY $2:raw LIMIT $3 ) AS sub 
-                ON (thread_id = $4 AND sub.sub_parent_id = path[1]) 
-                ORDER BY $5:raw`, [
-                subWhereCondition.toString(),
+                (SELECT id AS sub_parent_id FROM posts ${subWhereCondition} ORDER BY $1:raw LIMIT $2 ) AS sub 
+                ON (thread_id = $3 AND sub.sub_parent_id = path[1]) 
+                ORDER BY $4:raw`, [
                 (getParams.desc ? 'id DESC ' : 'id ASC'),
                 getParams.limit,
                 threadId,
                 (getParams.desc ? 'sub.sub_parent_id DESC, path ASC' : 'path ASC'),
             ]);
-        } catch (error) {
-            console.log('ERROR: ', error.message);
-        }
+        } catch (error) {}
     }
 
 
@@ -183,7 +165,6 @@ export default new class PostsModel extends BaseModel{
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;
-            console.log('ERROR: ', error.message || error);
         }
         return result;
     }

@@ -43,7 +43,7 @@ export default new class ForumsController {
         }
     }
 
-    async getForumDetails(req, reply) {
+    async GetRequestGetForumDetails(req, reply) {
         let slug = req.params['slug'];
 
         let existingForum = await forumsModel.getForumBySlug(slug);
@@ -59,12 +59,11 @@ export default new class ForumsController {
             .send(forumSerializer.serialize_one(existingForum, '404'));
     }
 
-    async createThreadForForum(req, reply) {
+    async PostRequestCreateThreadsForForum(req, reply) {
         let threadData = req.body;
         let authorNickname = threadData.author;
         let forumSlug = req.params['slug'];
         if (isValidId(forumSlug)) {
-            console.log('formSlug', forumSlug);
             return reply
                 .code(400)
                 .header('Content-Type', 'application/json; charset=utf-8')
@@ -117,7 +116,7 @@ export default new class ForumsController {
         }
     }
 
-    async getForumThreads(req, reply) {
+    async GetRequestGetForumThreads(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
             limit : req.query.limit ? Number(req.query.limit) : 100,
@@ -139,7 +138,7 @@ export default new class ForumsController {
             .send(threadsSerializer.serialize_many(threads));
     }
 
-    async getForumUsers(req, reply) {
+    async GetRequestGetForumUsers(req, reply) {
         const getParams = {
             desc : req.query.desc === 'true',
             limit : req.query.limit ? Number(req.query.limit) : 100,

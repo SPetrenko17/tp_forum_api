@@ -10,25 +10,27 @@ export default new class ForumSerializer extends BaseSerializer{
                     title: forum.title,
                     user: forum.owner_nickname,
                     posts: forum.posts,
-                    threads: forum.threads }
+                    threads: forum.threads,
+                }
             case '409':
                 return  {
                     slug: forum.slug,
                     title: forum.title,
-                    user: forum.owner_nickname};
+                    user: forum.owner_nickname,
+                };
 
             case '201':{
                 return {
                     slug: forum.data.slug,
                     title: forum.data.title,
-                    user: forum.data.owner_nickname
+                    user: forum.data.owner_nickname,
                 }
             }
             default:
                 return {
                     slug: forum.data.slug,
                     title: forum.data.title,
-                    user: forum.data.owner_nickname
+                    user: forum.data.owner_nickname,
                 }
         }
 
