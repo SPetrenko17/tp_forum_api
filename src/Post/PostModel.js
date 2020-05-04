@@ -99,7 +99,6 @@ export default new class PostsModel extends BaseModel{
         try {
 
             let cond = ``;
-
             if(getParams.since){
                 cond += ` WHERE thread_id = ${threadId} AND path `;
                 if (getParams.desc){
