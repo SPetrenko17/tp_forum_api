@@ -5,7 +5,7 @@ import threadsController from "./Thread/ThreadController";
 import serviceController from "./Service/ServiceController";
 
 const fastify = require('fastify')({
-    // logger: true,
+     logger: true,
 });
 
 fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
