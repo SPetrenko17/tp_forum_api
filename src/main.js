@@ -52,7 +52,7 @@ fastify.post('/api/service/clear', serviceController.clearAll);
 
 
 const port = process.env.PORT || 5000;
-fastify.listen(port, function (err, address) {
+fastify.listen(port, '0.0.0.0', function (err, address) {
     if (err) {
         fastify.log.error(err);
         process.exit(1)
