@@ -8,6 +8,7 @@ const fastify = require('fastify')({
      logger: true,
 });
 
+
 fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
     try {
         let json = { };
