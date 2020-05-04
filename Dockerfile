@@ -7,7 +7,7 @@ RUN apt-get -y update
 
 # Install PSQL
 
-ENV PGVER 10
+ENV PGVER 9.5
 RUN apt-get install -y postgresql-$PGVER
 
 # Run the rest of the commands as the ``postgres`` user created by the ``postgres-$PGVER`` package when it was ``apt-get installed``
@@ -45,15 +45,10 @@ RUN apt-get install -y build-essential
 COPY . /src
 WORKDIR /src
 
-# установка зависимостей
-# символ астериск ("*") используется для того чтобы по возможности
-# скопировать оба файла: package.json и package-lock.json
-COPY package*.json ./
-
 RUN npm install
 
 # Server port
 EXPOSE 5000
 
 ENV PGPASSWORD docker
-CMD service postgresql start && psql -h localhost -U docker -d docker -p 5432 -a -q -f ./database/db_script.sql && node ./dist/bundle.js
+CMD service postgresql start && psql -h localhost -U docker -d docker -f ./database/db_script.sql && npm start
