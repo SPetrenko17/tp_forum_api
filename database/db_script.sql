@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS forums (
     FOREIGN KEY ( owner_nickname ) REFERENCES users(nickname)
 );
 
+
 CREATE TABLE IF NOT EXISTS threads (
     id              BIGSERIAL                   PRIMARY KEY,
     slug            CITEXT                      UNIQUE,
@@ -58,7 +59,10 @@ CREATE TABLE IF NOT EXISTS posts (
     message             VARCHAR                     NOT NULL,
     parent              BIGINT                      NULL REFERENCES posts(id),
     path                BIGINT                      ARRAY,
-    FOREIGN KEY ( thread_id ) REFERENCES threads(id),
+    FOREIGN KEY ( author_id ) REFERENCES users(user_id),
+    FOREIGN KEY ( author_nickname ) REFERENCES users(nickname),
+    FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
+    FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
 );
 CREATE INDEX post_thread_index ON posts(thread_id);
 
