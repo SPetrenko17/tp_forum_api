@@ -25,7 +25,7 @@ const connect = {
 export default new class Database {
     constructor() {
         this._pgp = pgPromise;
-        this._db = pgPromise(connect.local);
+        this._db = pgPromise(connect.docker);
         //
         // let script = this.sql('./db/drop_and_create.sql');
         //
