@@ -59,6 +59,12 @@ export default new class ThreadsModel extends BaseModel {
             return await this._dbContext.db.oneOrNone(query);
         } catch (error) {}
     }
+    async getForPost(type, value) { //for check
+        try {
+            const query = new PQ(`SELECT id, slug, forum_id, forum_slug FROM threads WHERE ${type} = $1`, [value]);
+            return await this._dbContext.db.oneOrNone(query);
+        } catch (error) {}
+    }
 
     async updateThread(id, threadData) {
         try {

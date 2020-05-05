@@ -31,7 +31,7 @@ export default new class PostsModel extends BaseModel{
             const query = new PQ(`INSERT INTO posts (
                 author_id, author_nickname, forum_id, forum_slug, thread_id, thread_slug,
                 created, message, parent)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, author_nickname, forum_slug, thread_id, isedited, created, message, parent, path `,
                 [user.user_id, user.nickname, thread.forum_id, thread.forum_slug,
                     thread.id, thread.slug, postData.created, postData.message,
                     postData.parent ? postData.parent : null,]);

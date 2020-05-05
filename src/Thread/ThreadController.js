@@ -16,7 +16,7 @@ export default new class ThreadsController {
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id'];
 
-        let thread = await threadsModel.get(type,value);
+        let thread = await threadsModel.getForPost(type,value);
 
 
         if (!thread) {
@@ -44,7 +44,7 @@ export default new class ThreadsController {
         let createdDatetime = new Date();
         for (let postData of postsData) {
 
-            let user = await usersModel.getByNickname(postData.author);
+            let user = await usersModel.getByNicknameForPost(postData.author);
             if (!user) {
                 return reply
                     .code(404)

@@ -42,6 +42,12 @@ export default new class UsersModel extends BaseModel{
             return await this._dbContext.db.oneOrNone(query);
         } catch (error) {}
     }
+    async getByNicknameForPost(nickname) {
+        try {
+            const query = new PQ(`SELECT user_id, nickname FROM users WHERE nickname = $1`, [nickname]);
+            return await this._dbContext.db.oneOrNone(query);
+        } catch (error) {}
+    }
 
     async updateUser(nickname, userData) {
         try {

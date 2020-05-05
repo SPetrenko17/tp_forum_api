@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     about       TEXT        NOT NULL ,
     email       CITEXT      UNIQUE
 );
+CREATE INDEX users_n_id_index ON users (nickname) INCLUDE (user_id);
 
 CREATE TABLE IF NOT EXISTS forums (
     forum_id        BIGSERIAL   PRIMARY KEY,
@@ -22,9 +23,7 @@ CREATE TABLE IF NOT EXISTS forums (
     owner_id        BIGINT      NOT NULL REFERENCES users(user_id),
     owner_nickname  CITEXT      NOT NULL REFERENCES users(nickname),
     posts           INTEGER     DEFAULT 0,
-    threads         INTEGER     DEFAULT 0,
-    FOREIGN KEY ( owner_id ) REFERENCES users(user_id),
-    FOREIGN KEY ( owner_nickname ) REFERENCES users(nickname)
+    threads         INTEGER     DEFAULT 0
 );
 
 
@@ -38,13 +37,10 @@ CREATE TABLE IF NOT EXISTS threads (
     created         TIMESTAMP WITH TIME ZONE    DEFAULT NOW(),
     title           VARCHAR                     NOT NULL,
     message         VARCHAR                     NOT NULL,
-    votes           INTEGER                     DEFAULT 0,
-    FOREIGN KEY ( author_id ) REFERENCES users(user_id),
-    FOREIGN KEY ( author_nickname ) REFERENCES users(nickname),
-    FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
-    FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
+    votes           INTEGER                     DEFAULT 0
 );
-CREATE INDEX threads_forumslug_index ON threads(forum_slug);
+CREATE INDEX threads_index ON threads (id) INCLUDE (slug, forum_slug, forum_id);
+
 
 CREATE TABLE IF NOT EXISTS posts (
     id                  BIGSERIAL                   PRIMARY KEY,
@@ -58,11 +54,10 @@ CREATE TABLE IF NOT EXISTS posts (
     isEdited            BOOLEAN                     DEFAULT FALSE,
     message             VARCHAR                     NOT NULL,
     parent              BIGINT                      NULL REFERENCES posts(id),
-    path                BIGINT                      ARRAY,
-    FOREIGN KEY ( thread_id ) REFERENCES threads(id)
-
+    path                BIGINT                      ARRAY
 );
-CREATE INDEX post_thread_index ON posts(thread_id);
+
+
 
 CREATE TABLE IF NOT EXISTS votes (
     id              BIGSERIAL   PRIMARY KEY,
