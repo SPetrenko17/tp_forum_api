@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS threads (
     FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
     FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
 );
-CREATE INDEX threads_forumslug_index ON threads(forum_slug);
+
 
 CREATE TABLE IF NOT EXISTS posts (
     id                  BIGSERIAL                   PRIMARY KEY,
@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS posts (
     FOREIGN KEY ( thread_id ) REFERENCES threads(id)
 
 );
-CREATE INDEX post_thread_index ON posts(thread_id);
+CREATE INDEX post_thread_index ON posts(id, thread_id) INCLUDE (author_id, author_nickname,
+    forum_id, forum_slug, thread_id, thread_slug, created, isEdited, message, parent, path);
 
 CREATE TABLE IF NOT EXISTS votes (
     id              BIGSERIAL   PRIMARY KEY,

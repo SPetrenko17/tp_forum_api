@@ -31,7 +31,7 @@ export default new class PostsModel extends BaseModel{
             const query = new PQ(`INSERT INTO posts (
                 author_id, author_nickname, forum_id, forum_slug, thread_id, thread_slug,
                 created, message, parent)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING * `,
                 [user.user_id, user.nickname, thread.forum_id, thread.forum_slug,
                     thread.id, thread.slug, postData.created, postData.message,
                     postData.parent ? postData.parent : null,]);
@@ -42,7 +42,7 @@ export default new class PostsModel extends BaseModel{
             INSERT INTO forum_users (forum_id, user_id)
                 VALUES ($1, $2)
                 ON CONFLICT DO NOTHING
-                RETURNING *`, [thread.forum_id, user.user_id]);
+                 `, [thread.forum_id, user.user_id]);
 
             result.isSuccess = true;
         } catch (error) {
