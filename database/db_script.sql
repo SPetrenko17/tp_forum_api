@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS posts (
     message             VARCHAR                     NOT NULL,
     parent              BIGINT                      NULL REFERENCES posts(id),
     path                BIGINT                      ARRAY,
-    FOREIGN KEY ( thread_id ) REFERENCES threads(thread_id)
+    FOREIGN KEY ( thread_id ) REFERENCES threads(id)
 
 );
 CREATE INDEX post_thread_index ON posts(thread_id);
