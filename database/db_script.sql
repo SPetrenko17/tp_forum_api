@@ -59,10 +59,8 @@ CREATE TABLE IF NOT EXISTS posts (
     message             VARCHAR                     NOT NULL,
     parent              BIGINT                      NULL REFERENCES posts(id),
     path                BIGINT                      ARRAY,
-    FOREIGN KEY ( author_id ) REFERENCES users(user_id),
-    FOREIGN KEY ( author_nickname ) REFERENCES users(nickname),
-    FOREIGN KEY ( forum_id ) REFERENCES forums(forum_id),
-    FOREIGN KEY ( forum_slug ) REFERENCES forums(slug)
+    FOREIGN KEY ( thread_id ) REFERENCES threads(id)
+
 );
 CREATE INDEX post_thread_index ON posts(thread_id);
 
