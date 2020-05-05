@@ -49,6 +49,7 @@ export default new class ForumsModel extends BaseModel{
     }
 
     async addPostsToForum(id, posts_num) {
+        console.log('FUUUCK posts to forum');
         let result = {
             isSuccess: false,
             message: '',

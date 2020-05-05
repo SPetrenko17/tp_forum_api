@@ -13,6 +13,7 @@ export default new class PostsModel extends BaseModel{
     }
 
     async createPost(postData, thread, user) {
+        console.log('FUUUCK post create');
         let result = {
             isSuccess: false,
             message: '',

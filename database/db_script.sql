@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
     about       TEXT        NOT NULL ,
     email       CITEXT      UNIQUE
 );
-CREATE INDEX users_n_id_index ON users (nickname) INCLUDE (user_id);
 
 CREATE TABLE IF NOT EXISTS forums (
     forum_id        BIGSERIAL   PRIMARY KEY,
@@ -39,7 +38,7 @@ CREATE TABLE IF NOT EXISTS threads (
     message         VARCHAR                     NOT NULL,
     votes           INTEGER                     DEFAULT 0
 );
-CREATE INDEX threads_index ON threads (id) INCLUDE (slug, forum_slug, forum_id);
+
 
 
 CREATE TABLE IF NOT EXISTS posts (
