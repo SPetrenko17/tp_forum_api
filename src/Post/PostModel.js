@@ -19,15 +19,15 @@ export default new class PostsModel extends BaseModel{
             data: null
         };
         try {
-            if (postData.parent) {
-                const query = new PQ(`SELECT id FROM posts WHERE id = $1 AND thread_id = $2`,
-                    [postData.parent, thread.id]);
-                let parentResult = await this._dbContext.db.oneOrNone(query);
-                if (!parentResult) {
-                    result.message = '409';
-                    return result;
-                }
-            }
+            // if (postData.parent) {
+            //     const query = new PQ(`SELECT id FROM posts WHERE id = $1 AND thread_id = $2`,
+            //         [postData.parent, thread.id]);
+            //     let parentResult = await this._dbContext.db.oneOrNone(query);
+            //     if (!parentResult) {
+            //         result.message = '409';
+            //         return result;
+            //     }
+            // }
             const query = new PQ(`INSERT INTO posts (
                 author_id, author_nickname, forum_id, forum_slug, thread_id, thread_slug,
                 created, message, parent)
@@ -37,12 +37,6 @@ export default new class PostsModel extends BaseModel{
                     postData.parent ? postData.parent : null,]);
 
             result.data = await this._dbContext.db.one(query);
-            // console.log('!!!@!!@!@', result);
-            //     if (!result.isSuccess) {
-            //         result.message = '409';
-            //         return result;
-            //     }
-
             await this._dbContext.db.oneOrNone(`
             INSERT INTO forum_users (forum_id, user_id)
                 VALUES ($1, $2)
@@ -51,6 +45,15 @@ export default new class PostsModel extends BaseModel{
 
             result.isSuccess = true;
         } catch (error) {
+            console.log('error catch', error)
+                if (error.code === '00409') {
+                    result.message = '409';
+                    return result;
+                } else if (error.code === '23503') {
+                    result.message = '409';
+                    return result;
+                }
+
             result.message = error.message;
         }
         return result;
