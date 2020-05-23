@@ -37,6 +37,11 @@ export default new class PostsModel extends BaseModel{
                     postData.parent ? postData.parent : null,]);
 
             result.data = await this._dbContext.db.one(query);
+            // console.log('!!!@!!@!@', result);
+            //     if (!result.isSuccess) {
+            //         result.message = '409';
+            //         return result;
+            //     }
 
             await this._dbContext.db.oneOrNone(`
             INSERT INTO forum_users (forum_id, user_id)

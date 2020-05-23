@@ -74,9 +74,31 @@ CREATE TABLE IF NOT EXISTS forum_users (
 );
 
 
+-- CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
+--     DECLARE
+--         parent_path BIGINT[];
+--         parent_thread_id INT;
+--     BEGIN
+--         IF (NEW.parent > 0) THEN
+--         SELECT path, thread_id FROM posts
+--             WHERE id = NEW.parent  INTO parent_path, parent_thread_id;
+--         IF parent_thread_id != NEW.thread_id THEN
+--             raise exception 'error228' using errcode = '00409';
+--         end if;
+--         NEW.path := NEW.path || parent_path || NEW.id;
+--         ELSE
+--              NEW.path := NEW.path || NEW.id;
+--         END IF;
+--
+--         RETURN NEW;
+--     END;
+--
+-- $path$ LANGUAGE  plpgsql;
+
 CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
     DECLARE
         parent_path BIGINT[];
+
     BEGIN
         IF (NEW.parent > 0) THEN
         SELECT path FROM posts
@@ -91,11 +113,15 @@ CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
 
 $path$ LANGUAGE  plpgsql;
 
+
 DROP TRIGGER IF EXISTS path_trigger ON posts;
 
 CREATE TRIGGER path_trigger BEFORE INSERT ON posts FOR EACH ROW EXECUTE PROCEDURE path();
 
 
+
 create index indx_user_nickname ON users(nickname);
 create index indx_forum_slug ON forums(slug);
 create index indx_threads_slug ON threads(slug);
+
+create index indx_post_thread_id ON posts(thread_id)
