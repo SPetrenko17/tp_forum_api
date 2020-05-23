@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     email       CITEXT      UNIQUE
 );
 
+
 CREATE TABLE IF NOT EXISTS forums (
     forum_id        BIGSERIAL   PRIMARY KEY,
     slug            CITEXT      UNIQUE NOT NULL,
@@ -95,5 +96,6 @@ DROP TRIGGER IF EXISTS path_trigger ON posts;
 CREATE TRIGGER path_trigger BEFORE INSERT ON posts FOR EACH ROW EXECUTE PROCEDURE path();
 
 
-
-
+create index indx_user_nickname ON users(nickname);
+create index indx_forum_slug ON forums(slug);
+create index indx_threads_slug ON threads(slug);

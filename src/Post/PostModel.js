@@ -13,7 +13,6 @@ export default new class PostsModel extends BaseModel{
     }
 
     async createPost(postData, thread, user) {
-        console.log('FUUUCK post create');
         let result = {
             isSuccess: false,
             message: '',
@@ -36,15 +35,7 @@ export default new class PostsModel extends BaseModel{
                 [user.user_id, user.nickname, thread.forum_id, thread.forum_slug,
                     thread.id, thread.slug, postData.created, postData.message,
                     postData.parent ? postData.parent : null,]);
-
             result.data = await this._dbContext.db.one(query);
-
-            await this._dbContext.db.oneOrNone(`
-            INSERT INTO forum_users (forum_id, user_id)
-                VALUES ($1, $2)
-                ON CONFLICT DO NOTHING
-                RETURNING *`, [thread.forum_id, user.user_id]);
-
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;

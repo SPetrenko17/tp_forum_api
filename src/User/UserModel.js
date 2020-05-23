@@ -2,6 +2,7 @@ import BaseModel from "../Base/BaseModel";
 import Database from '../database';
 
 const PQ = require('pg-promise').ParameterizedQuery;
+
 export default new class UsersModel extends BaseModel{
 
 
@@ -18,10 +19,12 @@ export default new class UsersModel extends BaseModel{
             data: null
         };
         try {
+
             const query =
                 new PQ(`INSERT INTO users (nickname, about, fullname, email) VALUES ($1, $2, $3, $4) RETURNING *`
                 ,[nickname, userData.about, userData.fullname, userData.email]);
             result.data = await this._dbContext.db.one(query);
+
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;

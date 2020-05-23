@@ -55,7 +55,7 @@ export default new class ThreadsController {
 
             postData['created'] = createdDatetime;
 
-            let createPostResult = await postsModel.createPost(postData, thread, user);
+            let createPostResult = await postsModel.createPost(postData, thread, user); //todo триггер на добавление
             if (createPostResult.isSuccess) {
                 postsResult.push(createPostResult.data);
             } else if (createPostResult.message === '409') {
@@ -72,7 +72,7 @@ export default new class ThreadsController {
         }
 
         if (postsData.length > 0) {
-            let addPostsResult = await forumsModel.addPostsToForum(thread.forum_id, postsData.length);
+            let addPostsResult = await forumsModel.addPostsToForum(thread.forum_id, postsData.length); //выпилил
             if (!addPostsResult.isSuccess) {
                 return reply
                     .code(500)
@@ -87,10 +87,12 @@ export default new class ThreadsController {
             .send(postsSerializer.serialize_many(postsResult));
     }
 
+
+
     async PostRequestVoteForThread(req, reply) {
         let voteData = req.body;
 
-        let user = await usersModel.getByNickname(voteData.nickname);
+        let user = await usersModel.getByNicknameForPost(voteData.nickname);
         if (!user) {
             return reply
                 .code(404)
@@ -117,7 +119,6 @@ export default new class ThreadsController {
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send({message: voteResult.message});
         } else if (!voteResult.data) {
-
             return reply
                 .code(200)
                 .header('Content-Type', 'application/json; charset=utf-8')

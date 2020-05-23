@@ -49,18 +49,18 @@ export default new class ForumsModel extends BaseModel{
     }
 
     async addPostsToForum(id, posts_num) {
-        console.log('FUUUCK posts to forum');
         let result = {
             isSuccess: false,
             message: '',
             data: null
         };
         try {
-            const query = new PQ(`UPDATE forums SET 
+            const query = new PQ(`UPDATE forums SET
                 posts = posts + $1
                 WHERE forum_id = $2
-                RETURNING *`,[posts_num, id]);
-            result.data = await this._dbContext.db.one(query);
+                `,[posts_num, id]);
+            await this._dbContext.db.none(query);
+            result.data = '';
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;
@@ -79,11 +79,12 @@ export default new class ForumsModel extends BaseModel{
         }
         try {
             const query =
-                new PQ(`UPDATE forums SET threads = threads + $1 WHERE forum_id = $2 RETURNING *`,
+                new PQ(`UPDATE forums SET threads = threads + $1 WHERE forum_id = $2`,
                 [   threads_num,
                     id
                 ]);
-            result.data = await this._dbContext.db.one(query);
+            await this._dbContext.db.none(query);
+            result.data = '';
             result.isSuccess = true;
         } catch (error) {
             result.message = error.message;

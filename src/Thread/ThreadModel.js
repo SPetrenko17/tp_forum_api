@@ -39,11 +39,11 @@ export default new class ThreadsModel extends BaseModel {
 
             result.data = await this._dbContext.db.one(query);
 
-            await this._dbContext.db.oneOrNone(`
+            await this._dbContext.db.none(`
             INSERT INTO forum_users (forum_id, user_id)
                 VALUES ($1, $2)
                 ON CONFLICT DO NOTHING
-                RETURNING *`,
+                 `,
                 [forum.forum_id, user.user_id]);
 
             result.isSuccess = true;
@@ -102,7 +102,7 @@ export default new class ThreadsModel extends BaseModel {
                 cond += ` created ASC `
             }
             cond += ` LIMIT ${getParams.limit} `;
-            return await this._dbContext.db.manyOrNone(`SELECT * FROM threads `+ cond.toString());
+            return await this._dbContext.db.manyOrNone(`SELECT * FROM threads `+ cond);
         } catch (error) {}
     }
 
