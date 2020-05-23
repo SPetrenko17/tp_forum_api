@@ -88,15 +88,6 @@ export default new class ThreadsController {
 
     async PostRequestVoteForThread(req, reply) {
         let voteData = req.body;
-
-        let user = await usersModel.getByNickname(voteData.nickname);
-        if (!user) {
-            return reply
-                .code(404)
-                .header('Content-Type', 'application/json; charset=utf-8')
-                .send({message: "Can't find user with nickname " + voteData.nickname});
-        }
-
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
         let thread = await threadsModel.get(type,value);
@@ -109,10 +100,10 @@ export default new class ThreadsController {
         }
         thread.id = Number(thread.id);
 
-        let voteResult = await votesModel.create(voteData.voice, user, thread);
+        let voteResult = await votesModel.create(voteData.voice, voteData.nickname, thread);
         if (!voteResult.isSuccess) {
             return reply
-                .code(400)
+                .code(404)
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send({message: voteResult.message});
         } else if (!voteResult.data) {
@@ -137,7 +128,7 @@ export default new class ThreadsController {
         }
 
         reply
-            .code(500)
+            .code(404)
             .header('Content-Type', 'application/json; charset=utf-8')
             .send();
     }

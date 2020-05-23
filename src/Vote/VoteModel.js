@@ -10,7 +10,7 @@ export default new class VotesModel extends BaseModel{
         super('votes');
          this._dbContext = Database
     }
-    async create(voice, user, thread) {
+    async create(voice, nickname, thread) {
         let result = {
             isSuccess: false,
             errorCode: '',
@@ -22,7 +22,7 @@ export default new class VotesModel extends BaseModel{
                 VALUES ($1, $2, $3) 
                 ON CONFLICT ON CONSTRAINT unique_vote DO
                 UPDATE SET voice = $3 WHERE vote.voice <> $3
-                RETURNING *, (xmax::text <> '0') as existed`,[user.nickname, thread.id, voice]);
+                RETURNING *, (xmax::text <> '0') as existed`,[nickname, thread.id, voice]);
             result.data = await this._dbContext.db.oneOrNone(query);
             result.isSuccess = true;
         } catch (error) {

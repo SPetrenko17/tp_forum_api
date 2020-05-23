@@ -126,4 +126,6 @@ create index indx_threads_slug ON threads(slug);
 
 create index indx_b on posts(id, path, thread_id);
 
+create index indx_thread_by_fslug on threads(forum_slug);
+create index indx_thread_by_fslug on threads(created);
 -- create index indx_post_thread_id ON posts(thread_id)

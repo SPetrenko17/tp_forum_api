@@ -45,7 +45,6 @@ export default new class PostsModel extends BaseModel{
 
             result.isSuccess = true;
         } catch (error) {
-            // console.log('error catch', error)
                 if (error.code === '00409') {
                     result.message = '409';
                     return result;
