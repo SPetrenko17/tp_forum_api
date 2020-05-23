@@ -4,10 +4,9 @@ import postsController from "./Post/PostController";
 import threadsController from "./Thread/ThreadController";
 import serviceController from "./Service/ServiceController";
 
-export const fastify = require('fastify')({
+const fastify = require('fastify')({
      logger: true,
 });
-
 
 
 fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
@@ -54,11 +53,9 @@ fastify.post('/api/service/clear', serviceController.clearAll);
 
 const port = process.env.PORT || 5000;
 fastify.listen(port, '0.0.0.0', function (err, address) {
-
     if (err) {
         fastify.log.error(err);
         process.exit(1)
     }
     fastify.log.info(`server listening on ${address}`)
 });
-
