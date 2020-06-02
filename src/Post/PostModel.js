@@ -12,6 +12,64 @@ export default new class PostsModel extends BaseModel{
         this._dbContext = Database;
     }
 
+
+    async createPosts(postsData, thread, users) {
+        let result = {
+            isSuccess: false,
+            message: '',
+            data: null
+        };
+        let createdDatetime = new Date(Date.now()).toISOString().replace('T',' ').replace('Z','');
+
+
+        try {
+
+            let values = '';
+            let values2 = '';
+            for(let i = 0; i < postsData.length; i++){
+                postsData[i]['created'] = createdDatetime;
+                // console.log('QUERY123',  postsData[i].parent? postsData[i].parent.toString(): '(((')
+                values += `('${users[i].user_id}' , '${users[i].nickname}' , '${thread.forum_id}' , '${thread.forum_slug}' , '${thread.id}' , '${thread.slug}' , '${postsData[i].created}' , '${postsData[i].message}' , ${postsData[i].parent ? postsData[i].parent.toString() : 'null'} ) ${postsData[i+1]? ',': ''}`;
+                values2 += `(${thread.forum_id}, ${users[i].user_id} ) ${postsData[i+1]? ',': ''}`;
+            }
+
+            const query = new PQ(`INSERT INTO posts (
+                author_id, author_nickname, forum_id, forum_slug, thread_id, thread_slug,
+                created, message, parent)
+                VALUES ${values} RETURNING *`,
+                []);
+            this.query = query;
+
+            result.data = await this._dbContext.db.manyOrNone(query);
+
+            await this._dbContext.db.manyOrNone(`
+            INSERT INTO forum_users (forum_id, user_id)
+                VALUES ${values2}
+                ON CONFLICT DO NOTHING
+                RETURNING *`, []);
+
+            result.isSuccess = true;
+        } catch (error) {
+
+             console.log('error catch', error)
+            console.log('error query', error.code, this.query)
+            if (error.code === '00409') {
+                result.message = '409';
+                return result;
+            } else if (error.code === '23503') {
+                result.message = '409';
+                return result;
+            } else {
+
+                error.message = `${error}`
+            }
+
+            result.message = error.message;
+        }
+        return result;
+
+
+    }
     async createPost(postData, thread, user) {
         let result = {
             isSuccess: false,
@@ -19,15 +77,6 @@ export default new class PostsModel extends BaseModel{
             data: null
         };
         try {
-            // if (postData.parent) {
-            //     const query = new PQ(`SELECT id FROM posts WHERE id = $1 AND thread_id = $2`,
-            //         [postData.parent, thread.id]);
-            //     let parentResult = await this._dbContext.db.oneOrNone(query);
-            //     if (!parentResult) {
-            //         result.message = '409';
-            //         return result;
-            //     }
-            // }
             const query = new PQ(`INSERT INTO posts (
                 author_id, author_nickname, forum_id, forum_slug, thread_id, thread_slug,
                 created, message, parent)
@@ -45,6 +94,7 @@ export default new class PostsModel extends BaseModel{
 
             result.isSuccess = true;
         } catch (error) {
+            // console.log('error catch', error)
                 if (error.code === '00409') {
                     result.message = '409';
                     return result;

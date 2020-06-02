@@ -42,32 +42,62 @@ export default new class ThreadsController {
 
         let postsResult = [];
         let createdDatetime = new Date();
+
+
+        let users = []
         for (let postData of postsData) {
 
-            let user = await usersModel.getByNickname(postData.author);
-            if (!user) {
+            users.push(await usersModel.getByNickname(postData.author));
+            if (!users) {
                 return reply
                     .code(404)
                     .header('Content-Type', 'application/json; charset=utf-8')
                     .send({message: "Can't find user with nickname " + postData.author});
             }
 
-            postData['created'] = createdDatetime;
+            // postData['created'] = createdDatetime;
 
-            let createPostResult = await postsModel.createPost(postData, thread, user);
-            if (createPostResult.isSuccess) {
-                postsResult.push(createPostResult.data);
-            } else if (createPostResult.message === '409') {
-                return reply
-                    .code(409)
-                    .header('Content-Type', 'application/json; charset=utf-8')
-                    .send({message: "Can't create post this parent in a different thread."});
-            } else {
-                return reply
-                    .code(400)
-                    .header('Content-Type', 'application/json; charset=utf-8')
-                    .send();
-            }
+            // let createPostResult = await postsModel.createPost(postData, thread, user);
+            // if (createPostResult.isSuccess) {
+            //     postsResult.push(createPostResult.data);
+            // } else if (createPostResult.message === '409') {
+            //     return reply
+            //         .code(409)
+            //         .header('Content-Type', 'application/json; charset=utf-8')
+            //         .send({message: "Can't create post this parent in a different thread."});
+            // } else {
+            //     return reply
+            //         .code(400)
+            //         .header('Content-Type', 'application/json; charset=utf-8')
+            //         .send();
+            // }
+        }
+
+        let createPostsResult = await postsModel.createPosts(postsData, thread, users);
+        console.log('createPostsResult', createPostsResult);
+        if (createPostsResult.isSuccess) {
+            postsResult = createPostsResult.data
+        } else if (createPostsResult.message === '409') {
+            return reply
+                .code(409)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't create post this parent in a different thread."});
+        } else if(createPostsResult.message === 'TypeError: Cannot read property \'user_id\' of null'){
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: `Can't find post author by nickname`});
+        }
+        else if(createPostsResult.message === 'error: INSERT has more target columns than expressions'){
+            return reply
+                .code(405)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send();
+        } else {
+            return reply
+                .code(400)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send();
         }
 
         if (postsData.length > 0) {
@@ -88,6 +118,15 @@ export default new class ThreadsController {
 
     async PostRequestVoteForThread(req, reply) {
         let voteData = req.body;
+
+        let user = await usersModel.getByNickname(voteData.nickname);
+        if (!user) {
+            return reply
+                .code(404)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send({message: "Can't find user with nickname " + voteData.nickname});
+        }
+
         const type = isValidId(req.params['slug_or_id'])? 'id' : 'slug';
         let value = isValidId(req.params['slug_or_id'])?Number(req.params['slug_or_id']):req.params['slug_or_id']
         let thread = await threadsModel.get(type,value);
@@ -100,10 +139,10 @@ export default new class ThreadsController {
         }
         thread.id = Number(thread.id);
 
-        let voteResult = await votesModel.create(voteData.voice, voteData.nickname, thread);
+        let voteResult = await votesModel.create(voteData.voice, user, thread);
         if (!voteResult.isSuccess) {
             return reply
-                .code(404)
+                .code(400)
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send({message: voteResult.message});
         } else if (!voteResult.data) {
@@ -128,7 +167,7 @@ export default new class ThreadsController {
         }
 
         reply
-            .code(404)
+            .code(500)
             .header('Content-Type', 'application/json; charset=utf-8')
             .send();
     }

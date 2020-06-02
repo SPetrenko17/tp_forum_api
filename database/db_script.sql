@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS forums (
 CREATE TABLE IF NOT EXISTS threads (
     id              BIGSERIAL                   PRIMARY KEY,
     slug            CITEXT                      UNIQUE,
-    author_id       BIGINT                      NOT NULL REFERENCES users(user_id),
+    author_id       BIGINT                      REFERENCES users(user_id),
     author_nickname CITEXT                      NOT NULL REFERENCES users(nickname),
-    forum_id        BIGINT                      NOT NULL REFERENCES forums(forum_id),
+    forum_id        BIGINT                      REFERENCES forums(forum_id),
     forum_slug      CITEXT                      NOT NULL REFERENCES forums(slug),
     created         TIMESTAMP WITH TIME ZONE    DEFAULT NOW(),
     title           VARCHAR                     NOT NULL,
@@ -95,28 +95,27 @@ CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
 
 $path$ LANGUAGE  plpgsql;
 
--- CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
---     DECLARE
---         parent_path BIGINT[];
---
---     BEGIN
---         IF (NEW.parent > 0) THEN
---         SELECT path FROM posts
---             WHERE id = NEW.parent INTO parent_path;
---         NEW.path := NEW.path || parent_path || NEW.id;
---         ELSE
---              NEW.path := NEW.path || NEW.id;
---         END IF;
---
---         RETURN NEW;
---     END;
---
--- $path$ LANGUAGE  plpgsql;
+
+
 
 
 DROP TRIGGER IF EXISTS path_trigger ON posts;
 
 CREATE TRIGGER path_trigger BEFORE INSERT ON posts FOR EACH ROW EXECUTE PROCEDURE path();
+
+-- CREATE TRIGGER post_insert_user_forum
+--     AFTER INSERT
+--     ON posts
+--     FOR EACH ROW
+-- EXECUTE PROCEDURE update_user_forum();
+--
+-- CREATE OR REPLACE FUNCTION update_user_forum() RETURNS TRIGGER AS
+-- $update_users_forum$
+-- BEGIN
+--     INSERT INTO forum_users (forum_id, user_id) VALUES (NEW.forum_id, NEW.forum) on conflict do nothing;
+--     return NEW;
+-- end
+-- $update_users_forum$ LANGUAGE plpgsql;
 
 
 
@@ -129,3 +128,5 @@ create index indx_b on posts(id, path, thread_id);
 create index indx_thread_by_fslug on threads(forum_slug);
 create index indx_thread_by_fslug on threads(created);
 -- create index indx_post_thread_id ON posts(thread_id)
+
+
