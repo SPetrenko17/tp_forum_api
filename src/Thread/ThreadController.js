@@ -74,7 +74,7 @@ export default new class ThreadsController {
         }
 
         let createPostsResult = await postsModel.createPosts(postsData, thread, users);
-        console.log('createPostsResult', createPostsResult);
+        // console.log('createPostsResult', createPostsResult);
         if (createPostsResult.isSuccess) {
             postsResult = createPostsResult.data
         } else if (createPostsResult.message === '409') {

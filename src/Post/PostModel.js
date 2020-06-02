@@ -51,8 +51,8 @@ export default new class PostsModel extends BaseModel{
             result.isSuccess = true;
         } catch (error) {
 
-             console.log('error catch', error)
-            console.log('error query', error.code, this.query)
+            //  console.log('error catch', error)
+            // console.log('error query', error.code, this.query)
             if (error.code === '00409') {
                 result.message = '409';
                 return result;
