@@ -3,7 +3,7 @@ const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
     entry: [
-        './src/main.js'
+        './server.js'
     ],
     mode: 'development',
 

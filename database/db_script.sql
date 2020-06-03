@@ -1,132 +1,166 @@
 CREATE EXTENSION IF NOT EXISTS CITEXT;
-
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS forums CASCADE;
 DROP TABLE IF EXISTS threads CASCADE;
-DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS votes CASCADE;
+DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS forum_users CASCADE;
 
 CREATE TABLE IF NOT EXISTS users (
-    user_id     BIGSERIAL   PRIMARY KEY,
-    nickname    CITEXT      UNIQUE NOT NULL,
-    fullname    VARCHAR     NOT NULL ,
-    about       TEXT        NOT NULL ,
-    email       CITEXT      UNIQUE
+  id SERIAL UNIQUE,
+  nickname CITEXT         NOT NULL PRIMARY KEY,
+  email    CITEXT         NOT NULL UNIQUE,
+  fullname CITEXT         NOT NULL,
+  about    TEXT           NOT NULL
 );
+
+CREATE UNIQUE INDEX idx_users_nickname ON users(nickname COLLATE "C");
+CLUSTER users USING idx_users_nickname;
 
 
 CREATE TABLE IF NOT EXISTS forums (
-    forum_id        BIGSERIAL   PRIMARY KEY,
-    slug            CITEXT      UNIQUE NOT NULL,
-    title           VARCHAR     NOT NULL,
-    owner_id        BIGINT      NOT NULL REFERENCES users(user_id),
-    owner_nickname  CITEXT      NOT NULL REFERENCES users(nickname),
-    posts           INTEGER     DEFAULT 0,
-    threads         INTEGER     DEFAULT 0
+  id      SERIAL,
+  slug    CITEXT PRIMARY KEY,
+  posts   INT    NOT NULL DEFAULT 0,
+  threads INT       NOT NULL DEFAULT 0,
+  title   TEXT      NOT NULL,
+  "user"  CITEXT      NOT NULL
 );
-
 
 CREATE TABLE IF NOT EXISTS threads (
-    id              BIGSERIAL                   PRIMARY KEY,
-    slug            CITEXT                      UNIQUE,
-    author_id       BIGINT                      REFERENCES users(user_id),
-    author_nickname CITEXT                      NOT NULL REFERENCES users(nickname),
-    forum_id        BIGINT                      REFERENCES forums(forum_id),
-    forum_slug      CITEXT                      NOT NULL REFERENCES forums(slug),
-    created         TIMESTAMP WITH TIME ZONE    DEFAULT NOW(),
-    title           VARCHAR                     NOT NULL,
-    message         VARCHAR                     NOT NULL,
-    votes           INTEGER                     DEFAULT 0
+  id        SERIAL,
+  author    CITEXT        NOT NULL REFERENCES users(nickname),
+  created   TIMESTAMPTZ DEFAULT now(),
+  forum     CITEXT        NOT NULL REFERENCES forums(slug),
+  message   TEXT        NOT NULL,
+  slug      CITEXT      UNIQUE,
+  title     TEXT        NOT NULL,
+  votes     INT         NOT NULL DEFAULT 0
 );
 
+CREATE UNIQUE INDEX idx_thread_id        ON threads(id);
+-- CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
+CREATE INDEX idx_threads_slug_id         ON threads(slug, id);
+CREATE INDEX idx_threads_forum_created   ON threads(forum, created);
+
+CLUSTER threads USING idx_threads_forum_created;
+
+CREATE OR REPLACE FUNCTION threads_forum_counter()
+  RETURNS TRIGGER AS $threads_forum_counter$
+    BEGIN
+      UPDATE forums
+        SET threads = threads + 1
+          WHERE slug = NEW.forum;
+      RETURN NULL;
+    END;
+$threads_forum_counter$  LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS threads_forum_counter ON threads;
+CREATE TRIGGER threads_forum_counter AFTER INSERT ON threads FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 
 
-CREATE TABLE IF NOT EXISTS posts (
-    id                  BIGSERIAL                   PRIMARY KEY,
-    author_id           BIGSERIAL                   NOT NULL REFERENCES users(user_id),
-    author_nickname     CITEXT                      NOT NULL REFERENCES users(nickname),
-    forum_id            BIGINT                      NOT NULL REFERENCES forums(forum_id),
-    forum_slug          CITEXT                      NOT NULL REFERENCES forums(slug),
-    thread_id           BIGINT                      NOT NULL REFERENCES threads(id),
-    thread_slug         CITEXT                      REFERENCES threads(slug),
-    created             TIMESTAMP WITH TIME ZONE    DEFAULT NOW(),
-    isEdited            BOOLEAN                     DEFAULT FALSE,
-    message             VARCHAR                     NOT NULL,
-    parent              BIGINT                      NULL REFERENCES posts(id),
-    path                BIGINT                      ARRAY
+CREATE TABLE posts (
+  id SERIAL,
+  path INTEGER[],
+  author CITEXT NOT NULL REFERENCES users(nickname),
+  created TIMESTAMPTZ DEFAULT now(),
+  edited BOOLEAN,
+  message TEXT,
+  parent_id INTEGER,
+  forum_slug CITEXT NOT NULL,
+  thread_id INTEGER NOT NULL
 );
+
+CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id);
+CREATE INDEX idx_post_thid_path ON posts(thread_id, path);
+CREATE INDEX idx_posts_root_path      ON posts (thread_id, (path[1]), path);
+CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, id) WHERE parent_id IS NULL;
+CREATE INDEX idx_posts_main      ON posts (id);
+CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id);
+
+
+CREATE OR REPLACE FUNCTION set_edited() RETURNS TRIGGER AS $set_edited$
+    BEGIN
+      IF (NEW.message = OLD.message)
+        THEN RETURN NULL;
+      END IF;
+        UPDATE posts SET edited = TRUE
+          WHERE id=NEW.id;
+        RETURN NULL;
+    END;
+  $set_edited$  LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_edited ON posts;
+CREATE TRIGGER set_edited AFTER UPDATE ON posts FOR EACH ROW EXECUTE PROCEDURE set_edited();
+
+
+
+CREATE OR REPLACE FUNCTION check_edited(pid INT, message TEXT)
+  RETURNS BOOLEAN AS $check_edited$
+    BEGIN
+      IF ((SELECT posts.message FROM posts WHERE id=pid) = message)
+        THEN RETURN FALSE;
+      END IF;
+        RETURN TRUE;
+    END;
+  $check_edited$ LANGUAGE plpgsql;
 
 
 
 CREATE TABLE IF NOT EXISTS votes (
-    id              BIGSERIAL   PRIMARY KEY,
-    nickname        CITEXT      NOT NULL REFERENCES users(nickname),
-    thread          BIGINT      NOT NULL REFERENCES threads(id),
-    voice           INTEGER     DEFAULT 0,
-    CONSTRAINT unique_vote UNIQUE(nickname, thread)
+  user_id   CITEXT REFERENCES users(nickname)   NOT NULL,
+  thread_id INT REFERENCES threads(id)          NOT NULL,
+  voice     INT                                 NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS forum_users (
-	forum_id        BIGINT     NOT NULL REFERENCES forums(forum_id),
-	user_id         BIGINT     NOT NULL REFERENCES users(user_id),
-	UNIQUE (user_id, forum_id)
-);
+ALTER TABLE ONLY votes ADD CONSTRAINT votes_user_thread_unique UNIQUE (user_id, thread_id);
+
+CLUSTER votes USING votes_user_thread_unique;
 
 
-CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
-    DECLARE
-        parent_path BIGINT[];
-        parent_thread_id INT;
+
+CREATE OR REPLACE FUNCTION vote_insert()
+  RETURNS TRIGGER AS $vote_insert$
     BEGIN
-        IF (NEW.parent > 0) THEN
-        SELECT path, thread_id FROM posts
-            WHERE id = NEW.parent  INTO parent_path, parent_thread_id;
-        IF parent_thread_id != NEW.thread_id THEN
-            raise exception 'error228' using errcode = '00409';
-        end if;
-        NEW.path := NEW.path || parent_path || NEW.id;
-        ELSE
-             NEW.path := NEW.path || NEW.id;
-        END IF;
-
-        RETURN NEW;
+        UPDATE threads
+        SET votes = votes + NEW.voice
+        WHERE id = NEW.thread_id;
+        RETURN NULL;
     END;
+$vote_insert$  LANGUAGE plpgsql;
 
-$path$ LANGUAGE  plpgsql;
-
-
-
-
-
-DROP TRIGGER IF EXISTS path_trigger ON posts;
-
-CREATE TRIGGER path_trigger BEFORE INSERT ON posts FOR EACH ROW EXECUTE PROCEDURE path();
-
--- CREATE TRIGGER post_insert_user_forum
---     AFTER INSERT
---     ON posts
---     FOR EACH ROW
--- EXECUTE PROCEDURE update_user_forum();
---
--- CREATE OR REPLACE FUNCTION update_user_forum() RETURNS TRIGGER AS
--- $update_users_forum$
--- BEGIN
---     INSERT INTO forum_users (forum_id, user_id) VALUES (NEW.forum_id, NEW.forum) on conflict do nothing;
---     return NEW;
--- end
--- $update_users_forum$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS vote_insert ON votes;
+CREATE TRIGGER vote_insert AFTER INSERT ON votes FOR EACH ROW EXECUTE PROCEDURE vote_insert();
 
 
 
-create index indx_user_nickname ON users(nickname);
-create index indx_forum_slug ON forums(slug);
-create index indx_threads_slug ON threads(slug);
+CREATE OR REPLACE FUNCTION vote_update() RETURNS TRIGGER AS $vote_update$
+BEGIN
+  IF OLD.voice = NEW.voice
+  THEN
+    RETURN NULL;
+  END IF;
+  UPDATE threads
+  SET
+    votes = votes + CASE WHEN NEW.voice = -1
+      THEN -2
+        ELSE 2 END
+  WHERE id = NEW.thread_id;
+  RETURN NULL;
+END;
+$vote_update$ LANGUAGE  plpgsql;
 
-create index indx_b on posts(id, path, thread_id);
-
-create index indx_thread_by_fslug on threads(forum_slug);
-create index indx_thread_by_fslug on threads(created);
--- create index indx_post_thread_id ON posts(thread_id)
+DROP TRIGGER IF EXISTS vote_update ON votes;
+CREATE TRIGGER vote_update AFTER UPDATE ON votes FOR EACH ROW EXECUTE PROCEDURE vote_update();
 
 
+CREATE TABLE forum_users (
+    user_id INT REFERENCES users(id),
+    forum_slug CITEXT NOT NULL,
+    username CITEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username COLLATE "C");
+
+
+CLUSTER forum_users USING idx_forum_users_slug;

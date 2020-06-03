@@ -44,16 +44,19 @@ export default new class ThreadsController {
         let createdDatetime = new Date();
 
 
-        let users = []
+        let users = [];
         for (let postData of postsData) {
 
-            users.push(await usersModel.getByNickname(postData.author));
-            if (!users) {
+            let user = await usersModel.getByNickname(postData.author);
+
+            if (!user) {
                 return reply
                     .code(404)
                     .header('Content-Type', 'application/json; charset=utf-8')
                     .send({message: "Can't find user with nickname " + postData.author});
             }
+            users.push(user);
+
 
             // postData['created'] = createdDatetime;
 
@@ -75,7 +78,10 @@ export default new class ThreadsController {
 
         let createPostsResult = await postsModel.createPosts(postsData, thread, users);
         // console.log('createPostsResult', createPostsResult);
+
+        console.log('message', createPostsResult.message);
         if (createPostsResult.isSuccess) {
+            console.log('success result', createPostsResult.message, createPostsResult.isSuccess, createPostsResult.data[0]);
             postsResult = createPostsResult.data
         } else if (createPostsResult.message === '409') {
             return reply
@@ -93,6 +99,12 @@ export default new class ThreadsController {
                 .code(405)
                 .header('Content-Type', 'application/json; charset=utf-8')
                 .send();
+        }
+        else if(createPostsResult.message === 'error: INSERT has more target columns than expressions'){
+            return reply
+                .code(409)
+                .header('Content-Type', 'application/json; charset=utf-8')
+                .send();
         } else {
             return reply
                 .code(400)
@@ -107,6 +119,7 @@ export default new class ThreadsController {
                     .code(500)
                     .header('Content-Type', 'application/json; charset=utf-8')
                     .send();
+            } else{
             }
         }
 
