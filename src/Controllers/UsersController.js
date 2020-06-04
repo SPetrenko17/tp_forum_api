@@ -1,21 +1,15 @@
 const dbConfig = require('../config/db');
+import userSerializer from '../Serializers/UserSerializer'
 
 const { db } = dbConfig;
 
 export default new class UsersController {
 
   async createUser(req, reply) {
-    const user = {
-      nickname: req.params.nickname,
-      fullname: req.body.fullname,
-      email: req.body.email,
-      about: req.body.about,
-    };
-
+    const user = userSerializer.serializeRequest(req);
     db.one({
       text: 'INSERT INTO users (nickname, fullname, email, about) '
           + 'VALUES ($1, $2, $3, $4) RETURNING *',
-      // + ' RETURNING (about, email, fullname, nickname);',
       values: [user.nickname, user.fullname, user.email, user.about],
     })
         .then((data) => {
@@ -34,7 +28,6 @@ export default new class UsersController {
                       .send(data);
                 })
                 .catch((error) => {
-                  // console.log(error);
                   reply.code(500)
                       .send(error);
                 });
@@ -62,7 +55,7 @@ export default new class UsersController {
           if (err.code === 0) {
             reply.code(404)
                 .send({
-                  message: "Can't find user with id #42",
+                  message: "Can't find user with id #",
                 });
           }
         });
@@ -101,16 +94,15 @@ export default new class UsersController {
               .send(data);
         })
         .catch((err) => {
-          // console.log(err);
           if (err.code === 0) {
             reply.code(404)
                 .send({
-                  message: "Can't find user with id #42",
+                  message: "Can't find user with id #",
                 });
           } else if (err.code === dbConfig.dataConflict) {
             reply.code(409)
                 .send({
-                  message: "Can't find user with id #42",
+                  message: "Can't find user with id #",
                 });
           }
         });

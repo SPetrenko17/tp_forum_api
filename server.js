@@ -8,9 +8,9 @@ import service from './src/Controllers/ServicesController'
 const port = 5000;
 
 const app = require('fastify')({
-  logger: {
-    level: 'error',
-  },
+  // logger: {
+  //   level: 'error',
+  // },
 });
 
 app.addContentTypeParser('application/json',
@@ -26,9 +26,6 @@ app.addContentTypeParser('application/json',
 app.listen(port, '0.0.0.0', () => {
   console.log(`Started on ${port}`);
 });
-
-
-app.get('/api', service.ping);
 app.post('/api/user/:nickname/create', users.createUser);
 app.get('/api/user/:nickname/profile', users.getUserInfo);
 app.post('/api/user/:nickname/profile', users.updateUserInfo);

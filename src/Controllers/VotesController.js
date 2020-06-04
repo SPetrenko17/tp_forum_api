@@ -35,13 +35,9 @@ export default new class VotesController {
               DO UPDATE SET voice = $3
               WHERE votes.thread_id = $1 AND votes.user_id = $2
       `,
-        values: [+req.params.slug, req.body.nickname, req.body.voice],
+        values: [req.params.slug, req.body.nickname, req.body.voice],
       };
     }
-
-    // queryData.text += selectQuery;
-
-    // console.log(queryData);
 
     db.none(queryData)
         .then(() => {
@@ -55,9 +51,8 @@ export default new class VotesController {
               });
         })
         .catch((err) => {
-          // console.log(err);
           reply.code(404).send({
-            message: 'Can\'t find user with id #42\n',
+            message: 'Can\'t find user with id #\n',
           });
         });
   }

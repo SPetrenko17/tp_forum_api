@@ -5,11 +5,8 @@ export default new class ForumsController {
 
 
   async createForum(req, reply) {
-    db.one({
-      text: `INSERT INTO forums (slug, title, "user") VALUES
-    ($1, $2, (SELECT nickname FROM users WHERE nickname=$3)) RETURNING *`,
-      values: [req.body.slug, req.body.title, req.body.user],
-    })
+    db.one(`INSERT INTO forums (slug, title, user) VALUES
+    ($1, $2, (SELECT nickname FROM users WHERE nickname=$3)) RETURNING *`,[req.body.slug, req.body.title, req.body.user])
         .then((data) => {
           reply.code(201)
               .send(data);
@@ -17,7 +14,7 @@ export default new class ForumsController {
         .catch((err) => {
           if (err.code === dbConfig.dataConflict) {
             db.one({
-              text: 'SELECT slug, title, "user" FROM forums WHERE slug=$1',
+              text: 'SELECT slug, title, user FROM forums WHERE slug=$1',
               values: [req.body.slug],
             })
                 .then((data) => {
@@ -47,7 +44,6 @@ export default new class ForumsController {
               .send(data);
         })
         .catch((err) => {
-          // console.log(err);
           if (err.code === 0) {
             reply.code(404)
                 .send({
@@ -120,7 +116,6 @@ export default new class ForumsController {
                   }
                 });
           } else {
-            // console.log(data);
             reply.header('Content-Type', 'application/json')
                 .type('application/json')
                 .code(200).send(data);

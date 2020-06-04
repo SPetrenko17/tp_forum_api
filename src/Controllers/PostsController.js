@@ -1,3 +1,7 @@
+import threadSerializer from '../Serializers/ThreadSerializer'
+import postSerializer from '../Serializers/PostSerializer'
+import forumSerializer from '../Serializers/ForumSerializer'
+import userSerializer from '../Serializers/UserSerializer'
 const dbConfig = require('../config/db');
 
 const { db } = dbConfig;
@@ -148,7 +152,6 @@ export default new class PostsController {
                     });
                 })
                 .catch((err) => {
-                    // console.log(err);
                     if (err.code === 0) {
                         reply.code(404)
                             .send({
@@ -187,54 +190,19 @@ export default new class PostsController {
             }
             endQuery += ' WHERE posts.id = $1 LIMIT 1';
             const query = beginQuery.slice(0, -1) + endQuery;
-
-            // console.log(query, id);
             db.one(query, id)
-                .then((bigData) => {
+                .then((responseData) => {
                     const response = {};
-                    response.post = {
-                        author: bigData.pauthor,
-                        id: bigData.pid,
-                        thread: bigData.pthread,
-                        parent: bigData.pparent,
-                        forum: bigData.pforumslug,
-                        message: bigData.pmessage,
-                        isEdited: bigData.pisEdited,
-                        created: bigData.pcreated,
-                    };
-
+                    response.post = postSerializer.serializeRelated(responseData);
                     if (forumRelated) {
-                        response.forum = {
-                            threads: bigData.fthreads,
-                            posts: bigData.fposts,
-                            title: bigData.ftitle,
-                            user: bigData.fuser_nickname,
-                            slug: bigData.fslug,
-                        };
+                        response.forum = forumSerializer.serializeRelated(responseData);
                     }
-
                     if (userRelated) {
-                        response.author = {
-                            nickname: bigData.unickname,
-                            about: bigData.uabout,
-                            fullname: bigData.ufullname,
-                            email: bigData.uemail,
-                        };
+                        response.author = userSerializer.serializeRelated(responseData);
                     }
-
                     if (threadRelated) {
-                        response.thread = {
-                            forum: bigData.tforumslug,
-                            author: bigData.tauthor,
-                            created: bigData.tcreated,
-                            votes: bigData.tvotes,
-                            id: bigData.tid,
-                            title: bigData.ttitle,
-                            message: bigData.tmessage,
-                            slug: bigData.tslug,
-                        };
+                        response.thread = threadSerializer.serializeRelated(responseData)
                     }
-
                     reply.code(200).send(response);
                 })
                 .catch((err) => {
@@ -258,17 +226,11 @@ export default new class PostsController {
 
         if (req.body.message === undefined) {
             query = `
-      SELECT id, author, message, created,
-      forum_slug AS forum,
-      thread_id AS thread
-      FROM posts WHERE id=$1
-      `;
+      SELECT id, author, message, created,forum_slug AS forum, thread_id AS thread FROM posts WHERE id=$1`;
             args.push(req.params.id);
         } else {
             query = `
-    UPDATE posts SET edited = message <> $1, message = $1
-      WHERE id = $2
-      RETURNING id, message, author, created, forum_slug AS forum,
+    UPDATE posts SET edited = message <> $1, message = $1 WHERE id = $2 RETURNING id, message, author, created, forum_slug AS forum,
         parent_id AS parent, thread_id AS thread, edited AS "isEdited"
 
     `;
@@ -287,7 +249,6 @@ export default new class PostsController {
                     .send(data);
             })
             .catch((err) => {
-                // console.log(err);
                 if (err.code === 0) {
                     reply.code(404)
                         .send({
