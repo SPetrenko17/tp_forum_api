@@ -31,7 +31,7 @@ export default new class PostsController {
                         });
                 }
 
-                query = `INSERT INTO posts (id, edited, author, message,thread_id, parent_id, path, forum_slug) VALUES `;
+                query = `INSERT INTO posts (edited, author, message,thread_id, parent_id, forum_slug) VALUES `;
 
                 const args = [];
                 let i = 1;
@@ -41,18 +41,15 @@ export default new class PostsController {
                     forumUsers.push(posts[j].author);
 
                     if (posts[j].parent) {
-                        query += `((SELECT nextval('posts_id_seq')::integer),FALSE, $${i}, $${i + 1}, (
+                        query += `(FALSE, $${i}, $${i + 1}, (
               SELECT (CASE WHEN EXISTS ( SELECT 1 FROM posts p WHERE p.id=$${i + 3} AND p.thread_id=$${i + 2})
-                THEN $${i + 2} ELSE NULL END)), $${i + 3},  array_append((SELECT path FROM posts WHERE id=$${i + 3}),
-                (SELECT currval('posts_id_seq')::integer)),
+                THEN $${i + 2} ELSE NULL END)), $${i + 3},
                 $${i + 4}),`;
                         i += 5;
                         args.push(...[posts[j].author, posts[j].message, threadForumInfo.thread_id, posts[j].parent, threadForumInfo.forum],
                         );
                     } else {
-                        query += `((SELECT nextval('posts_id_seq')::integer),
-            FALSE, $${i}, $${i + 1}, $${i + 2}, NULL,
-              array_append('{}', (SELECT currval('posts_id_seq')::integer)), $${i + 3}),`;
+                        query += `(FALSE, $${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
                         i += 4;
                         args.push(...[posts[j].author, posts[j].message, threadForumInfo.thread_id, threadForumInfo.forum],
                         );

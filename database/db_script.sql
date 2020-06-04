@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS forum_users CASCADE;
 
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL UNIQUE,
+  id       SERIAL         UNIQUE NOT NULL,
   nickname CITEXT         NOT NULL PRIMARY KEY,
   email    CITEXT         NOT NULL UNIQUE,
   fullname CITEXT         NOT NULL,
@@ -27,10 +27,13 @@ CREATE TABLE IF NOT EXISTS forums (
   "user"  CITEXT      NOT NULL
 );
 
+CREATE UNIQUE INDEX idx_forums_id ON forums(id);
+CLUSTER forums USING idx_forums_id;
+
 CREATE TABLE IF NOT EXISTS threads (
-  id        SERIAL,
+  id         SERIAL PRIMARY KEY ,
   author    CITEXT        NOT NULL REFERENCES users(nickname),
-  created   TIMESTAMPTZ DEFAULT now(),
+  created   TIMESTAMP WITH TIME ZONE DEFAULT now(),
   forum     CITEXT        NOT NULL REFERENCES forums(slug),
   message   TEXT        NOT NULL,
   slug      CITEXT      UNIQUE,
@@ -38,10 +41,11 @@ CREATE TABLE IF NOT EXISTS threads (
   votes     INT         NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX idx_thread_id        ON threads(id);
--- CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
-CREATE INDEX idx_threads_slug_id         ON threads(slug, id);
-CREATE INDEX idx_threads_forum_created   ON threads(forum, created);
+CREATE UNIQUE INDEX idx_thread_id ON threads(id);
+CREATE INDEX idx_threads_created ON threads(created);
+CREATE INDEX idx_threads_slug_id ON threads(slug, id);
+CREATE INDEX idx_threads_id_slug ON threads(id, slug);
+CREATE INDEX idx_threads_forum_created ON threads(forum, created);
 
 CLUSTER threads USING idx_threads_forum_created;
 
@@ -60,23 +64,36 @@ CREATE TRIGGER threads_forum_counter AFTER INSERT ON threads FOR EACH ROW EXECUT
 
 
 CREATE TABLE posts (
-  id SERIAL,
-  path INTEGER[],
+  id SERIAL PRIMARY KEY ,
+  path INTEGER ARRAY,
   author CITEXT NOT NULL REFERENCES users(nickname),
-  created TIMESTAMPTZ DEFAULT now(),
-  edited BOOLEAN,
-  message TEXT,
+  created TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  edited BOOLEAN DEFAULT FALSE,
+  message TEXT  NOT NULL,
   parent_id INTEGER,
   forum_slug CITEXT NOT NULL,
   thread_id INTEGER NOT NULL
 );
 
-CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id);
-CREATE INDEX idx_post_thid_path ON posts(thread_id, path);
-CREATE INDEX idx_posts_root_path      ON posts (thread_id, (path[1]), path);
-CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, id) WHERE parent_id IS NULL;
-CREATE INDEX idx_posts_main      ON posts (id);
-CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id);
+CREATE INDEX idx_post_threadID_created_id ON posts(thread_id, created, id);
+CREATE INDEX idx_post_threadID_path ON posts(thread_id, path);
+CREATE INDEX idx_posts_threadID_root_path ON posts (thread_id, (path[1]), path);
+CREATE INDEX idx_post_threadID_id_parentNull_id ON posts(thread_id, id) WHERE parent_id IS NULL;
+CREATE INDEX idx_posts_id ON posts (id);
+CREATE INDEX idx_posts_id_full ON posts (id, parent_id, thread_id , message, edited, created, forum_slug, author) ;
+CREATE INDEX idx_post_threadID_ID_parentID ON posts(thread_id, id, parent_id);
+
+
+CREATE TABLE forum_users (
+    user_id INT REFERENCES users(id),
+    forum_slug CITEXT NOT NULL,
+    username CITEXT NOT NULL
+);
+
+
+CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username COLLATE "C");
+CLUSTER forum_users USING idx_forum_users_slug;
+
 
 
 CREATE OR REPLACE FUNCTION set_edited() RETURNS TRIGGER AS $set_edited$
@@ -114,7 +131,6 @@ CREATE TABLE IF NOT EXISTS votes (
 );
 
 ALTER TABLE ONLY votes ADD CONSTRAINT votes_user_thread_unique UNIQUE (user_id, thread_id);
-
 CLUSTER votes USING votes_user_thread_unique;
 
 
@@ -154,13 +170,31 @@ DROP TRIGGER IF EXISTS vote_update ON votes;
 CREATE TRIGGER vote_update AFTER UPDATE ON votes FOR EACH ROW EXECUTE PROCEDURE vote_update();
 
 
-CREATE TABLE forum_users (
-    user_id INT REFERENCES users(id),
-    forum_slug CITEXT NOT NULL,
-    username CITEXT NOT NULL
-);
 
-CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username COLLATE "C");
+CREATE OR REPLACE FUNCTION path() RETURNS TRIGGER AS $path$
+    DECLARE
+        parent_path INT[];
+        parent_thread_id INT;
+    BEGIN
+        IF (NEW.parent_id is null ) THEN
+             NEW.path := NEW.path || NEW.id;
+        ELSE
+                     SELECT path, thread_id FROM posts
+            WHERE id = NEW.parent_id  INTO parent_path, parent_thread_id;
+        IF parent_thread_id != NEW.thread_id THEN
+            raise exception 'error228' using errcode = '00409';
+        end if;
+        NEW.path := NEW.path || parent_path || NEW.id;
+        END IF;
+
+        RETURN NEW;
+    END;
+
+$path$ LANGUAGE  plpgsql;
 
 
-CLUSTER forum_users USING idx_forum_users_slug;
+DROP TRIGGER IF EXISTS path_trigger ON posts;
+
+CREATE TRIGGER path_trigger BEFORE INSERT ON posts FOR EACH ROW EXECUTE PROCEDURE path();
+
+
