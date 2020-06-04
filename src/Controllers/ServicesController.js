@@ -7,7 +7,7 @@ export default new class ServiceController {
     const query = `
     SELECT (
       SELECT COUNT(*) FROM forums) AS forum,
-      (SELECT COUNT(*) FROM   users) AS user_count,
+      (SELECT COUNT(*) FROM users) AS user_count,
       (SELECT COUNT(*) FROM threads) AS thread,
       (SELECT COUNT(*) FROM posts) AS post
     `;
@@ -27,22 +27,12 @@ export default new class ServiceController {
 
   async clear(req, reply) {
     const query = `
-    TRUNCATE TABLE forum_users, votes, posts, threads, forums, users;
-  `;
-
-    dbConfig.counter = {
-      forum: 0,
-      thread: 0,
-      user: 0,
-      post: 0,
-    };
-
+    TRUNCATE TABLE forum_users, votes, posts, threads, forums, users;`;
     db.none(query)
         .then(() => {
           reply.code(200).send(null);
         })
         .catch((err) => {
-          // console.log(err);
           reply.code(500).send(err);
         });
   }

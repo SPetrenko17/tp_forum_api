@@ -19,10 +19,7 @@ export default new class PostsController {
         const posts = req.body;
         dbConfig.postsCount += posts.length;
 
-        db.one({
-            text: query,
-            values: req.params.slug,
-        })
+        db.one(query,[req.params.slug])
             .then((threadForumInfo) => {
                 if (posts.length === 0) {
                     reply.code(201).send([]);
@@ -43,7 +40,7 @@ export default new class PostsController {
                 for (let j = 0; j < posts.length; j++) {
                     forumUsers.push(posts[j].author);
 
-                    if (posts[j].parent !== undefined) {
+                    if (posts[j].parent) {
                         query += `((SELECT nextval('posts_id_seq')::integer),
             FALSE, $${i}, $${i + 1}, (
               SELECT (
@@ -206,7 +203,6 @@ export default new class PostsController {
                     reply.code(200).send(response);
                 })
                 .catch((err) => {
-                    // console.log(err);
                     if (err.code === 0) {
                         reply.code(404)
                             .send({

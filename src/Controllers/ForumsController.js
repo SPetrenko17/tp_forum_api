@@ -5,7 +5,7 @@ export default new class ForumsController {
 
 
   async createForum(req, reply) {
-    db.one(`INSERT INTO forums (slug, title, user) VALUES
+    db.one(`INSERT INTO forums (slug, title, "user") VALUES
     ($1, $2, (SELECT nickname FROM users WHERE nickname=$3)) RETURNING *`,[req.body.slug, req.body.title, req.body.user])
         .then((data) => {
           reply.code(201)
@@ -14,7 +14,7 @@ export default new class ForumsController {
         .catch((err) => {
           if (err.code === dbConfig.dataConflict) {
             db.one({
-              text: 'SELECT slug, title, user FROM forums WHERE slug=$1',
+              text: 'SELECT slug, title, "user" FROM forums WHERE slug=$1',
               values: [req.body.slug],
             })
                 .then((data) => {
@@ -29,10 +29,7 @@ export default new class ForumsController {
   }
 
   async getForumInfo(req, reply) {
-    db.one({
-      text: 'SELECT * FROM forums WHERE slug=$1;',
-      values: [req.params.slug],
-    })
+    db.one( 'SELECT * FROM forums WHERE slug=$1;',[req.params.slug])
         .then((data) => {
           if (data.length === 0) {
             reply.code(404)
@@ -54,10 +51,11 @@ export default new class ForumsController {
   }
 
   async getForumUsers(req, reply) {
-    const {desc} = req.query;
-    const {limit} = req.query;
-    const {since} = req.query;
-    const {slug} = req.params;
+
+    const desc = req.query.desc;
+    const limit = req.query.limit;
+    const since = req.query.since;
+    const slug = req.params.slug;
 
     let query = `
     SELECT u.* FROM "users" u
@@ -67,7 +65,7 @@ export default new class ForumsController {
     `;
     const args = [slug];
     let i = 2;
-    if (since !== undefined) {
+    if (since) {
       if (desc === 'true') {
         query += ` AND f.username < $${i++} COLLATE "C" `;
       } else {
@@ -80,14 +78,11 @@ export default new class ForumsController {
     } else {
       query += ' ORDER BY f.username COLLATE "C" ASC ';
     }
-    if (limit !== undefined) {
+    if (limit) {
       query += ` LIMIT $${i++}`;
       args.push(limit);
     }
-    db.any({
-      text: query,
-      values: args,
-    })
+    db.any(query,args)
         .then((data) => {
           if (data.length === 0) {
             db.one({
