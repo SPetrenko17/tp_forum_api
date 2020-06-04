@@ -123,7 +123,7 @@ export default new class PostsController {
         }
         let query;
         if (!related) {
-            query = `SELECT id, parent_id AS parent, thread_id AS thread, message, edited AS "isEdited", created, forum_slug AS forum, author FROM posts WHERE id = $1 LIMIT 1`;
+            query = `SELECT id, parent_id AS parent, thread_id AS thread, message, edited AS "isEdited", created, forum_slug AS forum, author FROM posts WHERE id = $1`;
             db.one(query, [id])
                 .then((post) => {
                     reply.code(200).send({
@@ -142,32 +142,23 @@ export default new class PostsController {
                 });
         } else {
             let query1 = `
-      SELECT posts.id AS pid, posts.parent_id AS post_parent,
-        posts.thread_id AS post_thread, posts.message AS post_message,
-        posts.edited AS post_is_edited, posts.created AS post_created,
-        posts.forum_slug AS post_forum_slug, posts.author AS post_author,`;
+      SELECT posts.id AS pid, posts.parent_id AS post_parent,posts.thread_id AS post_thread, posts.message AS post_message,
+      posts.edited AS post_is_edited, posts.created AS post_created,posts.forum_slug AS post_forum_slug, posts.author AS post_author,`;
             let query2 = ' FROM posts ';
             if (userRelated) {
-                query1 += `
-        U.nickname AS user_nickname, U.about AS user_about,
-        U.fullname AS user_fullname, U.email AS user_email,`;
+                query1 += `U.nickname AS user_nickname, U.about AS user_about,U.fullname AS user_fullname, U.email AS user_email,`;
                 query2 += 'LEFT JOIN users U ON U.nickname = posts.author ';
             }
             if (threadRelated) {
-                query1 += `
-        threads.author AS thread_author, threads.created AS thread_created,
-        threads.votes AS thread_votes, threads.id AS thread_id,
-        threads.title AS thread_title, threads.message AS thread_message,
-        threads.slug AS thread_slug, threads.forum AS thread_forum_slug,`;
+                query1 += `threads.author AS thread_author, threads.created AS thread_created,threads.votes AS thread_votes, threads.id AS thread_id,
+        threads.title AS thread_title, threads.message AS thread_message,threads.slug AS thread_slug, threads.forum AS thread_forum_slug,`;
                 query2 += 'LEFT JOIN threads ON threads.id = posts.thread_id ';
             }
             if (forumRelated) {
-                query1 += `
-        F.slug AS forum_slug, F.threads AS forum_threads, F.title as forum_title,
-        F.posts AS forum_posts, F."user" AS forum_user_nickname,`;
+                query1 += `F.slug AS forum_slug, F.threads AS forum_threads, F.title as forum_title,F.posts AS forum_posts, F."user" AS forum_user_nickname,`;
                 query2 += 'LEFT JOIN forums F ON F.slug = posts.forum_slug ';
             }
-            query2 += ' WHERE posts.id = $1 LIMIT 1';
+            query2 += ' WHERE posts.id = $1';
             const query = query1.slice(0, -1) + query2;
             db.one(query, id)
                 .then((responseData) => {

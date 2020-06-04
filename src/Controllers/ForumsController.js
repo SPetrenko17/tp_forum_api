@@ -67,16 +67,16 @@ export default new class ForumsController {
     let i = 2;
     if (since) {
       if (desc === 'true') {
-        query += ` AND f.username < $${i++} COLLATE "C" `;
+        query += ` AND f.username < $${i++}   `;
       } else {
-        query += ` AND f.username > $${i++} COLLATE "C" `;
+        query += ` AND f.username > $${i++}   `;
       }
       args.push(since);
     }
     if (desc === 'true') {
-      query += ' ORDER BY f.username COLLATE "C" DESC ';
+      query += ' ORDER BY f.username   DESC ';
     } else {
-      query += ' ORDER BY f.username COLLATE "C" ASC ';
+      query += ' ORDER BY f.username   ASC ';
     }
     if (limit) {
       query += ` LIMIT $${i++}`;
@@ -86,7 +86,7 @@ export default new class ForumsController {
         .then((data) => {
           if (data.length === 0) {
             db.one({
-              text: 'SELECT id FROM forums WHERE slug = $1 LIMIT 1',
+              text: 'SELECT id FROM forums WHERE slug = $1',
               values: [slug],
             })
                 .then((forumInfo) => {

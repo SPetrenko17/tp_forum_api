@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
   about    TEXT           NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_users_nickname ON users(nickname COLLATE "C");
+CREATE  INDEX idx_users_id ON users(id);
+CREATE UNIQUE INDEX idx_users_nickname ON users(nickname);
 CLUSTER users USING idx_users_nickname;
 
 
@@ -91,7 +92,7 @@ CREATE TABLE forum_users (
 );
 
 
-CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username COLLATE "C");
+CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username  );
 CLUSTER forum_users USING idx_forum_users_slug;
 
 

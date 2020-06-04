@@ -345,9 +345,9 @@ async function updateThread(req, reply) {
         FROM threads WHERE
     `;
     if (isNaN(req.params.slug)) {
-      query += 'slug = $1 LIMIT 1';
+      query += 'slug = $1';
     } else {
-      query += 'id = $1 LIMIT 1';
+      query += 'id = $1';
     }
     args = [req.params.slug];
   } else {
