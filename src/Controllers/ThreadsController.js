@@ -18,8 +18,7 @@ async function createThread(req, reply) {
     slug,
   ])
     .then(async (data) => {
-      await db.none(`
-        INSERT INTO forum_users(user_id,forum_slug, username) VALUES
+      await db.none(`INSERT INTO forum_users(user_id,forum_slug, username) VALUES
           ((SELECT id FROM users WHERE users.nickname = $2), $1, $2) ON CONFLICT DO NOTHING
       `,[forum, req.body.author]);
       reply.code(201)
@@ -113,10 +112,7 @@ async function getThreads(req, reply) {
 }
 
 async function getThreadInfo(req, reply) {
-  let sql = `
-    SELECT author, created, forum, id, message, votes, slug, title FROM threads
-      WHERE
-  `;
+  let sql = `SELECT author, created, forum, id, message, votes, slug, title FROM threads WHERE`;
   if (isNaN(req.params.slug)) {
     sql += ' slug = $1';
   } else {
@@ -289,7 +285,6 @@ async function getPostsByID(req, reply, id) {
             }
           })
           .catch((error) => {
-            // console.log(error);
             if (error.code === 0) {
               reply.code(404)
                 .send({
@@ -324,11 +319,9 @@ async function getPosts(req, reply) {
       values: [req.params.slug],
     })
       .then((data) => {
-        // console.log('data', data, req.params.slug);
         getPostsByID(req, reply, data.id);
       })
       .catch(() => {
-        // console.log(err);
         reply.code(404)
           .send({
             message: "Can't find thread with id #",
@@ -348,12 +341,8 @@ async function updateThread(req, reply) {
   const title = req.body.title;
   const message = req.body.message;
 
-  if (title === undefined && message === undefined) {
-    query = `
-      SELECT created, id, title,
-        slug, message, author, forum
-        FROM threads WHERE
-    `;
+  if (!title && !message) {
+    query = `SELECT created, id, title, slug, message, author, forum FROM threads WHERE`;
     if (isNaN(req.params.slug)) {
       query += 'slug = $1 LIMIT 1';
     } else {
@@ -374,19 +363,9 @@ async function updateThread(req, reply) {
     query = query.slice(0, -1);
     query += ' WHERE ';
     if (isNaN(req.params.slug)) {
-      query += `
-        slug = $${i++}
-        RETURNING created, id, title,
-          slug, message,
-          author, forum
-      `;
+      query += `slug = $${i++} RETURNING created, id, title, slug, message, author, forum`;
     } else {
-      query += `
-        id = $${i++}
-        RETURNING created, id, title,
-          slug, message,
-          author, forum
-      `;
+      query += `id = $${i++} RETURNING created, id, title,slug, message,author, forum`;
     }
     args.push(req.params.slug);
   }

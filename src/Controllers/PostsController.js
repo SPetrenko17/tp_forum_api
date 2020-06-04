@@ -43,11 +43,9 @@ export default new class PostsController {
                     if (posts[j].parent) {
                         query += `(FALSE, $${i}, $${i + 1}, (
               SELECT (CASE WHEN EXISTS ( SELECT 1 FROM posts p WHERE p.id=$${i + 3} AND p.thread_id=$${i + 2})
-                THEN $${i + 2} ELSE NULL END)), $${i + 3},
-                $${i + 4}),`;
+                THEN $${i + 2} ELSE NULL END)), $${i + 3}, $${i + 4}),`;
                         i += 5;
-                        args.push(...[posts[j].author, posts[j].message, threadForumInfo.thread_id, posts[j].parent, threadForumInfo.forum],
-                        );
+                        args.push(...[posts[j].author, posts[j].message, threadForumInfo.thread_id, posts[j].parent, threadForumInfo.forum],);
                     } else {
                         query += `(FALSE, $${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
                         i += 4;
@@ -57,9 +55,7 @@ export default new class PostsController {
                 }
 
                 query = query.slice(0, -1);
-                query += ` RETURNING author, id, created,
-        thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
-
+                query += ` RETURNING author, id, created, thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
                 db.any(query, args)
                     .then(async (data) => {
                         await db.none('UPDATE forums SET posts=forums.posts+$1 WHERE slug=$2',[posts.length, threadForumInfo.forum]);
@@ -126,7 +122,6 @@ export default new class PostsController {
             threadRelated = related.includes('thread');
             forumRelated = related.includes('forum');
         }
-
         let query;
         if (!related) {
             query = `SELECT id, parent_id AS parent, thread_id AS thread, message, edited AS "isEdited", created, forum_slug AS forum, author FROM posts WHERE id = $1 LIMIT 1`;

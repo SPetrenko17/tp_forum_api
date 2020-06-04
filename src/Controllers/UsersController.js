@@ -7,22 +7,15 @@ export default new class UsersController {
 
   async createUser(req, reply) {
     const user = userSerializer.serializeRequest(req);
-    db.one({
-      text: 'INSERT INTO users (nickname, fullname, email, about) '
-          + 'VALUES ($1, $2, $3, $4) RETURNING *',
-      values: [user.nickname, user.fullname, user.email, user.about],
-    })
+    db.one('INSERT INTO users (nickname, fullname, email, about) VALUES ($1, $2, $3, $4) RETURNING *',
+        [user.nickname, user.fullname, user.email, user.about])
         .then((data) => {
           reply.code(201)
               .send(data);
         })
         .catch((err) => {
-          // console.log(err);
           if (err.code === dbConfig.dataConflict) {
-            db.any({
-              text: 'SELECT * FROM users WHERE nickname=$1 OR email=$2',
-              values: [user.nickname, user.email],
-            })
+            db.any('SELECT * FROM users WHERE nickname=$1 OR email=$2',[user.nickname, user.email])
                 .then((data) => {
                   reply.code(409)
                       .send(data);
@@ -36,10 +29,7 @@ export default new class UsersController {
   }
 
   async getUserInfo(req, reply) {
-    db.one({
-      text: 'SELECT about, email, nickname, fullname FROM users WHERE nickname=$1;',
-      values: [req.params.nickname],
-    })
+    db.one('SELECT about, email, nickname, fullname FROM users WHERE nickname=$1;',[req.params.nickname])
         .then((data) => {
           if (data.length === 0) {
             reply.code(404)
@@ -51,7 +41,6 @@ export default new class UsersController {
               .send(data);
         })
         .catch((err) => {
-          // console.log(err);
           if (err.code === 0) {
             reply.code(404)
                 .send({
