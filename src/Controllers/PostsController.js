@@ -41,18 +41,9 @@ export default new class PostsController {
                     forumUsers.push(posts[j].author);
 
                     if (posts[j].parent) {
-                        query += `((SELECT nextval('posts_id_seq')::integer),
-            FALSE, $${i}, $${i + 1}, (
-              SELECT (
-                CASE WHEN
-                EXISTS (
-                  SELECT 1 FROM posts p
-                  WHERE p.id=$${i + 3}
-                  AND p.thread_id=$${i + 2}
-                )
-                THEN $${i + 2} ELSE NULL END)
-            ), $${i + 3},  array_append(
-              (SELECT path FROM posts WHERE id=$${i + 3}),
+                        query += `((SELECT nextval('posts_id_seq')::integer),FALSE, $${i}, $${i + 1}, (
+              SELECT (CASE WHEN EXISTS ( SELECT 1 FROM posts p WHERE p.id=$${i + 3} AND p.thread_id=$${i + 2})
+                THEN $${i + 2} ELSE NULL END)), $${i + 3},  array_append((SELECT path FROM posts WHERE id=$${i + 3}),
                 (SELECT currval('posts_id_seq')::integer)),
                 $${i + 4}),`;
                         i += 5;
@@ -133,14 +124,14 @@ export default new class PostsController {
         let threadRelated;
         let forumRelated;
 
-        if (related !== undefined) {
+        if (related) {
             userRelated = related.includes('user');
             threadRelated = related.includes('thread');
             forumRelated = related.includes('forum');
         }
 
         let query;
-        if (related === undefined) {
+        if (!related) {
             query = `SELECT id, parent_id AS parent, thread_id AS thread, message, edited AS "isEdited", created, forum_slug AS forum, author FROM posts WHERE id = $1 LIMIT 1`;
             db.one(query, [id])
                 .then((post) => {
@@ -160,29 +151,29 @@ export default new class PostsController {
                 });
         } else {
             let beginQuery = `
-      SELECT posts.id AS pid, posts.parent_id AS pparent,
-        posts.thread_id AS pthread, posts.message AS pmessage,
-        posts.edited AS pisedited, posts.created AS pcreated,
-        posts.forum_slug AS pforumslug, posts.author AS pauthor,`;
+      SELECT posts.id AS pid, posts.parent_id AS post_parent,
+        posts.thread_id AS post_thread, posts.message AS post_message,
+        posts.edited AS post_is_edited, posts.created AS post_created,
+        posts.forum_slug AS post_forum_slug, posts.author AS post_author,`;
             let endQuery = ' FROM posts ';
             if (userRelated) {
                 beginQuery += `
-        U.nickname AS unickname, U.about AS uabout,
-        U.fullname AS ufullname, U.email AS uemail,`;
+        U.nickname AS user_nickname, U.about AS user_about,
+        U.fullname AS user_fullname, U.email AS user_email,`;
                 endQuery += 'LEFT JOIN users U ON U.nickname = posts.author ';
             }
             if (threadRelated) {
                 beginQuery += `
-        threads.author AS tauthor, threads.created AS tcreated,
-        threads.votes AS tvotes, threads.id AS tid,
-        threads.title AS ttitle, threads.message AS tmessage,
-        threads.slug AS tslug, threads.forum AS tforumslug,`;
+        threads.author AS thread_author, threads.created AS thread_created,
+        threads.votes AS thread_votes, threads.id AS thread_id,
+        threads.title AS thread_title, threads.message AS thread_message,
+        threads.slug AS thread_slug, threads.forum AS thread_forum_slug,`;
                 endQuery += 'LEFT JOIN threads ON threads.id = posts.thread_id ';
             }
             if (forumRelated) {
                 beginQuery += `
-        F.slug AS fslug, F.threads AS fthreads, F.title as ftitle,
-        F.posts AS fposts, F."user" AS fuser_nickname,`;
+        F.slug AS forum_slug, F.threads AS forum_threads, F.title as forum_title,
+        F.posts AS forum_posts, F."user" AS forum_user_nickname,`;
                 endQuery += 'LEFT JOIN forums F ON F.slug = posts.forum_slug ';
             }
             endQuery += ' WHERE posts.id = $1 LIMIT 1';
@@ -220,7 +211,7 @@ export default new class PostsController {
         let query;
         const args = [];
 
-        if (req.body.message === undefined) {
+        if (!req.body.message) {
             query = `
       SELECT id, author, message, created,forum_slug AS forum, thread_id AS thread FROM posts WHERE id=$1`;
             args.push(req.params.id);

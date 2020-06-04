@@ -2,10 +2,10 @@ export default new class UserSerializer {
     //using in postsController
     serializeRelated(responseData){
         return {
-            nickname: responseData.unickname,
-            about: responseData.uabout,
-            fullname: responseData.ufullname,
-            email: responseData.uemail,
+            nickname: responseData.user_nickname,
+            about: responseData.user_about,
+            fullname: responseData.user_fullname,
+            email: responseData.user_email,
         };
     }
 
