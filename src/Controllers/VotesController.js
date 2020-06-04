@@ -4,7 +4,8 @@ const db = dbConfig.db;
 
 export default new class VotesController {
   async createVote(req, reply) {
-    let selectQuery = ` SELECT id, created, slug, title, forum, author, message, votes FROM threads WHERE `;
+    let selectQuery = ` SELECT id, created, slug, title, forum,
+    author, message, votes FROM threads WHERE `;
 
     if (isNaN(req.params.slug)) {
       selectQuery += `slug = '${req.params.slug}' LIMIT 1`;

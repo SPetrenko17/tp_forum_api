@@ -18,7 +18,8 @@ async function createThread(req, reply) {
     slug,
   ])
     .then(async (data) => {
-      await db.none(`INSERT INTO forum_users(user_id,forum_slug, username) VALUES
+      await db.none(`
+        INSERT INTO forum_users(user_id,forum_slug, username) VALUES
           ((SELECT id FROM users WHERE users.nickname = $2), $1, $2) ON CONFLICT DO NOTHING
       `,[forum, req.body.author]);
       reply.code(201)
@@ -112,15 +113,18 @@ async function getThreads(req, reply) {
 }
 
 async function getThreadInfo(req, reply) {
-  let sql = `SELECT author, created, forum, id, message, votes, slug, title FROM threads WHERE`;
+  let query = `
+    SELECT author, created, forum, id, message, votes, slug, title FROM threads
+      WHERE
+  `;
   if (isNaN(req.params.slug)) {
-    sql += ' slug = $1';
+    query += ' slug = $1';
   } else {
-    sql += ' id = $1';
+    query += ' id = $1';
   }
 
   db.one({
-    text: sql,
+    text: query,
     values: [req.params.slug],
   })
     .then((data) => {
@@ -154,31 +158,31 @@ async function getPostsByID(req, reply, id) {
   if (sort === undefined) {
     sort = 'flat';
   }
-  let sql;
+  let query;
   let args = [];
   if (sort === 'flat') {
-    sql = `SELECT id, thread_id AS thread, created,
+    query = `SELECT id, thread_id AS thread, created,
     message, parent_id AS parent, author, forum_slug AS forum FROM
     (SELECT * FROM posts WHERE thread_id = $1 `;
     args = [slugOrId];
     let i = 2;
     if (since !== undefined) {
       if (desc === 'true') {
-        sql += ` AND id < $${i++}`;
+        query += ` AND id < $${i++}`;
       } else {
-        sql += ` AND id > $${i++}`;
+        query += ` AND id > $${i++}`;
       }
       args.push(since);
     }
-    sql += ' ) p ';
+    query += ' ) p ';
     if (desc === 'true') {
-      sql += ' ORDER BY created DESC, id DESC ';
+      query += ' ORDER BY created DESC, id DESC ';
     } else {
-      sql += ' ORDER BY created, id  ';
+      query += ' ORDER BY created, id  ';
     }
 
     if (limit !== undefined) {
-      sql += ` LIMIT $${i++}`;
+      query += ` LIMIT $${i++}`;
       args.push(limit);
     }
   } else if (sort === 'tree') {
@@ -210,7 +214,7 @@ async function getPostsByID(req, reply, id) {
       limitSql = '';
     }
 
-    sql = `
+    query = `
       SELECT id, author, created, message, parent_id AS parent,
         forum_slug AS forum, thread_id AS thread
         FROM posts
@@ -240,7 +244,7 @@ async function getPostsByID(req, reply, id) {
       limitSql = 'LIMIT 100000';
     }
 
-    sql = `
+    query = `
     SELECT author, created, forum_slug AS forum, id, edited,
       message, parent_id AS parent, thread_id AS thread
       FROM posts
@@ -256,7 +260,7 @@ async function getPostsByID(req, reply, id) {
   }
 
   db.any({
-    text: sql,
+    text: query,
     values: args,
   })
     .then(async (data) => {
@@ -341,8 +345,12 @@ async function updateThread(req, reply) {
   const title = req.body.title;
   const message = req.body.message;
 
-  if (!title && !message) {
-    query = `SELECT created, id, title, slug, message, author, forum FROM threads WHERE`;
+  if (title === undefined && message === undefined) {
+    query = `
+      SELECT created, id, title,
+        slug, message, author, forum
+        FROM threads WHERE
+    `;
     if (isNaN(req.params.slug)) {
       query += 'slug = $1 LIMIT 1';
     } else {
