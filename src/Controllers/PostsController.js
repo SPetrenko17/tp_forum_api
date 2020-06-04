@@ -58,19 +58,19 @@ export default new class PostsController {
                 db.any(query, args)
                     .then(async (data) => {
                         await db.none('UPDATE forums SET posts=forums.posts+$1 WHERE slug=$2',[posts.length, threadForumInfo.forum]);
-                        let forum_usersSql = `INSERT INTO forum_users(user_id, forum_slug, username) VALUES`;
+                        let forums_user_query = `INSERT INTO forum_users(user_id, forum_slug, username) VALUES`;
                         let index = 1;
                         const forum_usersArgs = [];
                         for (let k = 0; k < forumUsers.length; k++) {
-                            forum_usersSql += `((SELECT id FROM users WHERE users.nickname = $${index + 1}),
+                            forums_user_query += `((SELECT id FROM users WHERE users.nickname = $${index + 1}),
               $${index}, $${index + 1}),`;
                             index += 2;
                             forum_usersArgs.push(threadForumInfo.forum, forumUsers[k]);
                         }
-                        forum_usersSql = forum_usersSql.slice(0, -1);
-                        forum_usersSql += ' ON CONFLICT DO NOTHING';
+                        forums_user_query = forums_user_query.slice(0, -1);
+                        forums_user_query += ' ON CONFLICT DO NOTHING';
 
-                        await db.none(forum_usersSql,forum_usersArgs)
+                        await db.none(forums_user_query,forum_usersArgs)
                             .catch(err => console.log(err));
 
                         reply.code(201).send(data);

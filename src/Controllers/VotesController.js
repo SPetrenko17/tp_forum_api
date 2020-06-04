@@ -8,9 +8,9 @@ export default new class VotesController {
     author, message, votes FROM threads WHERE `;
 
     if (isNaN(req.params.slug)) {
-      selectQuery += `slug = '${req.params.slug}' LIMIT 1`;
+      selectQuery += `slug = '${req.params.slug}'`;
     } else {
-      selectQuery += `id = '${req.params.slug}' LIMIT 1`;
+      selectQuery += `id = '${req.params.slug}'`;
     }
 
     let queryData;

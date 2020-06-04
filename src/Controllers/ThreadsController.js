@@ -61,8 +61,6 @@ async function getThreads(req, reply) {
 
   if (req.query.limit) {
     limit = `LIMIT ${req.query.limit}`;
-  } else {
-    limit = '';
   }
 
   if (req.query.since) {
@@ -76,7 +74,7 @@ async function getThreads(req, reply) {
   }
 
   db.any({
-    text: `SELECT * FROM threads WHERE forum=$1 ${since} ORDER BY created ${sort} ${limit};`,
+    text: `SELECT * FROM threads WHERE forum=$1 ${since} ORDER BY created ${sort} ${limit?limit:''};`,
     values: [req.params.slug],
   })
     .then((data) => {
@@ -89,7 +87,6 @@ async function getThreads(req, reply) {
             reply.code(200).send(data);
           })
           .catch((error) => {
-            // console.log(error);
             if (error.code === 0) {
               reply.code(404).send({
                 message: `Can't find threads by forum ${req.params.slug}`,
@@ -114,9 +111,7 @@ async function getThreads(req, reply) {
 
 async function getThreadInfo(req, reply) {
   let query = `
-    SELECT author, created, forum, id, message, votes, slug, title FROM threads
-      WHERE
-  `;
+    SELECT author, created, forum, id, message, votes, slug, title FROM threads WHERE`;
   if (isNaN(req.params.slug)) {
     query += ' slug = $1';
   } else {
@@ -155,7 +150,7 @@ async function getPostsByID(req, reply, id) {
   let { sort } = req.query;
   const { desc } = req.query;
 
-  if (sort === undefined) {
+  if (!sort) {
     sort = 'flat';
   }
   let query;
@@ -166,7 +161,7 @@ async function getPostsByID(req, reply, id) {
     (SELECT * FROM posts WHERE thread_id = $1 `;
     args = [slugOrId];
     let i = 2;
-    if (since !== undefined) {
+    if (since) {
       if (desc === 'true') {
         query += ` AND id < $${i++}`;
       } else {
@@ -181,33 +176,33 @@ async function getPostsByID(req, reply, id) {
       query += ' ORDER BY created, id  ';
     }
 
-    if (limit !== undefined) {
+    if (limit) {
       query += ` LIMIT $${i++}`;
       args.push(limit);
     }
   } else if (sort === 'tree') {
-    let sinceSql;
-    let descSql;
+    let sinceQuery;
+    let descQuery;
     let limitSql;
     let i = 2;
     args = [];
     args.push(slugOrId);
 
-    if (since !== undefined) {
-      sinceSql = ` AND (path ${desc === 'true' ? '<' : '>'}
+    if (since) {
+      sinceQuery = ` AND (path ${desc === 'true' ? '<' : '>'}
         (SELECT path FROM posts WHERE id = $${i++})) `;
       args.push(since);
     } else {
-      sinceSql = '';
+      sinceQuery = '';
     }
 
     if (desc === 'true') {
-      descSql = ' DESC ';
+      descQuery = ' DESC ';
     } else {
-      descSql = '';
+      descQuery = '';
     }
 
-    if (limit !== undefined) {
+    if (limit) {
       limitSql = ` LIMIT $${i++}`;
       args.push(limit);
     } else {
@@ -218,26 +213,26 @@ async function getPostsByID(req, reply, id) {
       SELECT id, author, created, message, parent_id AS parent,
         forum_slug AS forum, thread_id AS thread
         FROM posts
-        WHERE thread_id = $1 ${sinceSql}
-        ORDER BY path ${descSql}
+        WHERE thread_id = $1 ${sinceQuery}
+        ORDER BY path ${descQuery}
         ${limitSql}
     `;
 
   } else {
     args = [slugOrId];
-    const descSql = desc === 'true' ? 'DESC' : '';
-    let sinceSql;
+    const descQuery = desc === 'true' ? 'DESC' : '';
+    let sinceQuery;
     let limitSql;
     let k = 2;
-    if (since !== undefined) {
-      sinceSql = `
+    if (since) {
+      sinceQuery = `
         AND id ${desc === 'true' ? '<' : '>'} (SELECT path[1] FROM posts WHERE id = $${k++})`;
       args.push(since);
     } else {
-      sinceSql = '';
+      sinceQuery = '';
     }
 
-    if (limit !== undefined) {
+    if (limit) {
       limitSql = `LIMIT $${k++}`;
       args.push(limit);
     } else {
@@ -251,11 +246,11 @@ async function getPostsByID(req, reply, id) {
       WHERE path[1] IN (
         SELECT id FROM posts
         WHERE thread_id=$1 AND parent_id IS NULL
-        ${sinceSql}
-        ORDER BY id ${descSql}
+        ${sinceQuery}
+        ORDER BY id ${descQuery}
         ${limitSql}
       ) AND thread_id=$1
-      ORDER BY path[1] ${descSql}, path;
+      ORDER BY path[1] ${descQuery}, path;
     `;
   }
 
@@ -337,15 +332,13 @@ async function getPosts(req, reply) {
 }
 
 async function updateThread(req, reply) {
-
   let query;
   let args = [];
   let i = 1;
-
   const title = req.body.title;
   const message = req.body.message;
 
-  if (title === undefined && message === undefined) {
+  if (!title && !message) {
     query = `
       SELECT created, id, title,
         slug, message, author, forum
@@ -359,12 +352,12 @@ async function updateThread(req, reply) {
     args = [req.params.slug];
   } else {
     query = 'UPDATE threads SET ';
-    if (title !== undefined) {
+    if (title) {
       query += `title = $${i++},`;
       args.push(title);
     }
 
-    if (message !== undefined) {
+    if (message) {
       query += `message = $${i++},`;
       args.push(message);
     }

@@ -8,8 +8,7 @@ export default new class UsersController {
   async createUser(req, reply) {
     const user = userSerializer.serializeRequest(req);
     db.one({
-      text: 'INSERT INTO users (nickname, fullname, email, about) '
-          + 'VALUES ($1, $2, $3, $4) RETURNING *',
+      text: 'INSERT INTO users (nickname, fullname, email, about) VALUES ($1, $2, $3, $4) RETURNING *',
       values: [user.nickname, user.fullname, user.email, user.about],
     })
         .then((data) => {
@@ -17,7 +16,6 @@ export default new class UsersController {
               .send(data);
         })
         .catch((err) => {
-          // console.log(err);
           if (err.code === dbConfig.dataConflict) {
             db.any({
               text: 'SELECT * FROM users WHERE nickname=$1 OR email=$2',
