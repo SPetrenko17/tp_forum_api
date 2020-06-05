@@ -32,7 +32,7 @@ CREATE UNIQUE INDEX idx_forums_id ON forums(id);
 CREATE UNIQUE INDEX idx_forums_slug ON forums(slug);
 CREATE UNIQUE INDEX idx_forums_slug_id ON forums(slug, id);
 CREATE UNIQUE INDEX idx_forums_slug_slug ON forums(id, slug);
-CLUSTER forums USING idx_forums_id;
+CLUSTER forums USING idx_forums_slug;
 
 CREATE TABLE IF NOT EXISTS threads (
   id         SERIAL PRIMARY KEY ,
