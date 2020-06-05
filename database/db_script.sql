@@ -29,10 +29,9 @@ CREATE TABLE IF NOT EXISTS forums (
 );
 
 CREATE UNIQUE INDEX idx_forums_id ON forums(id);
-CREATE UNIQUE INDEX idx_forums_slug ON forums(slug);
 CREATE UNIQUE INDEX idx_forums_slug_id ON forums(slug, id);
 CREATE UNIQUE INDEX idx_forums_slug_slug ON forums(id, slug);
-CLUSTER forums USING idx_forums_slug;
+CLUSTER forums USING idx_forums_id;
 
 CREATE TABLE IF NOT EXISTS threads (
   id         SERIAL PRIMARY KEY ,
@@ -45,7 +44,7 @@ CREATE TABLE IF NOT EXISTS threads (
   votes     INT         NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX idx_thread_id ON threads(id);
+CREATE UNIQUE INDEX idx_thread_id ON threads(slug);
 CREATE INDEX idx_threads_created ON threads(created);
 CREATE INDEX idx_threads_slug_id ON threads(slug, id);
 CREATE INDEX idx_threads_id_slug ON threads(id, slug);
