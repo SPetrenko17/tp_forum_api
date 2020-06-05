@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS forums (
 );
 
 CREATE UNIQUE INDEX idx_forums_id ON forums(id);
+CREATE UNIQUE INDEX idx_forums_slug ON forums(slug);
+CREATE UNIQUE INDEX idx_forums_slug_id ON forums(slug, id);
+CREATE UNIQUE INDEX idx_forums_slug_slug ON forums(id, slug);
 CLUSTER forums USING idx_forums_id;
 
 CREATE TABLE IF NOT EXISTS threads (
@@ -47,7 +50,6 @@ CREATE INDEX idx_threads_created ON threads(created);
 CREATE INDEX idx_threads_slug_id ON threads(slug, id);
 CREATE INDEX idx_threads_id_slug ON threads(id, slug);
 CREATE INDEX idx_threads_forum_created ON threads(forum, created);
-
 CLUSTER threads USING idx_threads_forum_created;
 
 CREATE OR REPLACE FUNCTION threads_forum_counter()
@@ -92,7 +94,7 @@ CREATE TABLE forum_users (
 );
 
 
-CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username  );
+CREATE UNIQUE INDEX idx_forum_users_slug ON forum_users(forum_slug, username );
 CLUSTER forum_users USING idx_forum_users_slug;
 
 
